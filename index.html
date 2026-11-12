@@ -152,7 +152,7 @@ body.dark .midi{background:#202024;box-shadow:inset 0 0 0 1px #2e2e33;}body.dark
 .pills{flex-wrap:wrap;justify-content:center;}
 .howto{margin:0 0 6px;padding-left:16px;font-size:10px;line-height:1.45;color:#55544f;}.howto li{margin-bottom:5px;}.howto b{color:var(--ink);font-weight:500;}
 .hint{margin-top:14px;font-size:9px;color:var(--mute);letter-spacing:.06em;line-height:1.6;}
-.vrow #vF.six{grid-template-columns:repeat(6,40px)!important;}.vrow #vF.six .fd .ft{width:34px;}.vrow #vF.six .fd .ft::before{left:15px;}.vrow #vF.six .fd .fc{left:5px;width:24px;}.vrow #vF.six .fd .lm{left:30px;}.vrow #vF.six .fd b{font-size:8px!important;letter-spacing:0!important;}
+.vrow #vF.six{grid-template-columns:repeat(6,35px)!important;}.vrow #vF.six .fd .ft{width:30px;}.vrow #vF.six .fd .ft::before{left:13px;}.vrow #vF.six .fd .fc{left:4px;width:22px;}.vrow #vF.six .fd .lm{left:26px;}.vrow #vF.six .fd b{font-size:8px!important;letter-spacing:0!important;}
 html body.imm #imm .vrow #vF.six{grid-template-columns:repeat(6,minmax(0,1fr))!important;}html body.imm #imm #vF.six .fd .ft{width:24px;}html body.imm #imm #vF.six .fd .ft::before{left:10px;}html body.imm #imm #vF.six .fd .fc{left:2px;width:20px;}html body.imm #imm #vF.six .fd .lm{left:21px;}html body.imm #imm #vF.six .fd b{font-size:6.2px!important;letter-spacing:-.03em!important;}.fd b .lsh{display:none;}html body.imm #imm .fd b .lsh{display:inline;}html body.imm #imm .fd b .lfl{display:none;}
 #fogRow em{font-style:normal;margin-left:4px;letter-spacing:.1em;}
 #ageNow{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--cp-mute);margin:-2px 0 6px;font-family:'Barlow Condensed',sans-serif;}
@@ -280,7 +280,7 @@ html body.imm #imm .gkey span{font-size:7.5px;letter-spacing:0;}
 #sleep{grid-area:2/1;}
 /* ---- voice row with the arp box on the right ---- */
 .vrow{display:flex;gap:6px;align-items:stretch;justify-content:space-between;}.vrow #vF{flex:0 1 auto;min-width:0;gap:2px;}
-.arpBox{flex:1;max-width:120px;min-width:84px;border-left:1px solid var(--cp-line);padding-left:8px;display:flex;flex-direction:column;gap:3px;}
+.arpBox{flex:0 0 146px;max-width:146px;min-width:146px;border-left:1px solid var(--cp-line);padding-left:8px;display:flex;flex-direction:column;gap:3px;}
 .arpTop{display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Barlow Condensed',sans-serif;}.arpTop b{font-size:10px;font-weight:600;letter-spacing:.14em;color:var(--cp-ink);}
 #arpLamp{width:7px;height:7px;border-radius:50%;background:var(--cp-ledoff);transition:box-shadow .2s;}
 #arpLamp.on{background:#ffb020;box-shadow:0 0 6px 1px rgba(255,170,40,.7);}#arpLamp.on.tick{animation:lampTick .22s ease-out;}
@@ -292,7 +292,7 @@ html body.imm #imm .gkey span{font-size:7.5px;letter-spacing:0;}
 .tog b{position:absolute;left:7px;width:10px;height:7px;border-radius:4px;background:radial-gradient(circle at 40% 35%,#fff,#c8c2b2 60%,#7a7466);box-shadow:0 1px 2px rgba(0,0,0,.6);top:27px;transition:top .08s;}
 .tog.on i{top:4px;}.tog.on b{top:1px;}
 .arpMode{border:0;border-radius:3px;background:var(--cp-cap);color:#1a1408;box-shadow:0 2px 0 var(--cp-capsh);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:9px;letter-spacing:.04em;padding:3px 0;width:36px;cursor:pointer;}
-.faders.one{grid-template-columns:1fr;flex:1;}
+.faders.one{grid-template-columns:1fr;flex:1;}.faders.two{grid-template-columns:1fr 1fr;flex:1;gap:2px;min-width:0;}
 html body:not(.imm) :is(.device,#imm) #arpF .fd .ft{height:84px;}
 html body:not(.imm) :is(.device,#imm) .faders.sm .fd .ft{height:60px;}
 html body:not(.imm) #cpVoice .fd .fc,html body:not(.imm) #cpVoice .fd .fg,html body:not(.imm) #arpF .fd .fc,html body:not(.imm) #arpF .fd .fg{height:19px;}html body:not(.imm) #cpVoice .fd .fc::after,html body:not(.imm) #arpF .fd .fc::after{top:9px;}
@@ -371,7 +371,7 @@ body.paused #view{filter:saturate(.5) brightness(.6);}
 .fd .lm{position:absolute;left:35px;top:4px;bottom:4px;width:3px;border-radius:2px;background:#2a2a2e;overflow:hidden;}
 .fd .lm i{position:absolute;inset:0;background:linear-gradient(0deg,#38e060 0 62%,#ffb020 62% 86%,#ff3a1a 86%);clip-path:inset(calc((1 - var(--lm,0))*100%) 0 0 0);transition:clip-path .12s linear;}
 .faders.sm .fd .lm{left:22px;top:2px;bottom:2px;}
-.vrow #vF{grid-template-columns:repeat(5,46px)!important;}.vrow #vF .fd b{font-size:9px!important;letter-spacing:.02em!important;}
+.vrow #vF{grid-template-columns:repeat(5,42px)!important;}.vrow #vF .fd b{font-size:9px!important;letter-spacing:.02em!important;}
 html body.imm #imm .vrow #vF{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
 html body.imm #imm #vF .fd .ft{width:30px;}html body.imm #imm #vF .fd .ft::before{left:13px;}html body.imm #imm #vF .fd .fc{left:3px;width:24px;}html body.imm #imm #vF .fd .lm{left:27px;}
 html body.imm #imm #vF .fd b{font-size:6.5px!important;letter-spacing:0!important;}
@@ -543,7 +543,7 @@ html body.imm #imm .arpBox .tog.on b{top:19px;}
       <small>you play the parts as you drift.<br>pause (top right) has the world, display and how to play<br>iphone: switch off silent mode</small>
     </div>
   </div>
-  <section class="cp" id="cpVoice"><header><span id="vTitle">pad · voice</span><em id="vInst"></em></header><div class="vrow"><div class="faders" id="vF"></div><div class="arpBox"><div class="arpTop"><b>ARP</b><i id="arpLamp"></i></div><div class="arpBody"><div class="arpL"><button class="tog" id="arpSw" aria-label="arpeggiator on or off" aria-pressed="false"><u></u><i></i><b></b></button><button class="arpMode" id="arpMode" aria-label="arp pattern">DRIFT</button></div><div class="faders one" id="arpF"></div></div></div></div></section>
+  <section class="cp" id="cpVoice"><header><span id="vTitle">pad · voice</span><em id="vInst"></em></header><div class="vrow"><div class="faders" id="vF"></div><div class="arpBox"><div class="arpTop"><b>ARP</b><i id="arpLamp"></i></div><div class="arpBody"><div class="arpL"><button class="tog" id="arpSw" aria-label="arpeggiator on or off" aria-pressed="false"><u></u><i></i><b></b></button><button class="arpMode" id="arpMode" aria-label="arp pattern">DRIFT</button></div><div class="faders two" id="arpF"></div></div></div></div></section>
   <section class="cp" id="cpParts"><header><span>parts</span><em>tap change · hold off</em></header>
       <div class="parts">
         <div class="knob" id="kn-hum"><i class="led led-hum"></i><button class="k-blue" data-part="hum" aria-label="hum"></button><span>hum</span><b class="inst" id="in-hum"></b><i class="pips" id="pp-hum"></i></div>
@@ -592,7 +592,7 @@ html body.imm #imm .arpBox .tog.on b{top:19px;}
       <li><b>Wander.</b> WANDER (key 5) hands over to the autopilot. It heads for the edge of the unexplored dark, stops to look at things that catch its eye (landmarks, camps, animals, town lights at night), and finds its way around mountains and water. Touch any control to take back over.</li>
       <li><b>The band.</b> HUM, PAD, KEYS and SLOT 4 (empty for now). Tap a part to switch it on and select it; tap again for the next instrument you own; hold to switch it off (keys 1–4, Shift+1–4). GLOBAL selects no part, so its faders move every part at once.</li>
       <li><b>Faders.</b> Voice faders shape the selected part; each part has a gold LEVEL. On GLOBAL, LEVEL is the overall volume (it starts in the middle) and AMBIENCE sets the world sounds. Master faders: space, echo, tape drift, drive, and SAT (master tape saturation). TV view (pause menu): only the world, full screen, wandering, for casting your phone to a TV; tap for EXIT. Mode switch above them: MAN = only your settings; WORLD = your settings plus weather and places; SEMI = the automatic drift (default); AUTO = Drift plays the whole console for you (everything except the engine), in slow moods like WASH, GLASS, HAZE, DEEP, BLOOM and SPARSE; touch a fader and it leaves that one alone for a minute; leaving AUTO puts your settings back. Double-tap a fader to reset it. Dashed ghost caps show where your movement is pushing the sound.</li>
-      <li><b>ARP.</b> Press the lit button to run the arpeggiator on your pad (the red lamp shows it's on). RATE sets the speed; the button below changes the pattern.</li>
+      <li><b>ARP.</b> Press the lit button to run the arpeggiator on your pad (the red lamp shows it's on). TEMPO (in BPM) sets the speed for the arp and the percussion, and slower tempos let chords last longer; RATE sets how fast the arp runs within that tempo; the button below changes the pattern.</li>
       <li><b>Arrow pad.</b> ▲▼ change chord for the whole band, whichever part is selected. ◀▶ choose the scale. OCT −/+ (or [ ]) shift KEYS or PAD an octave. KEY moves the piece up a fifth; hold for down.</li>
       <li><b>Scales &amp; chords.</b> Eight scales, from lydian to whole tone. Chords follow the scale and the ground beneath you; the chord shows top left. Now and then everything shifts together with a swell.</li>
       <li><b>OK button.</b> Beside a train, cart, docked ship or balloon, press OK (or Enter) to ride, and again to hop off. At a town or city OK opens the shop (towns sell instruments, cities synths; each part holds 3). Beside a busker it tips a note.</li>
@@ -2377,10 +2377,12 @@ function uiFlash(el){if(!el)return;el.classList.remove('flash');requestAnimation
 document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('.knob button,.pill,.dpad .c,.tb,.slot');if(b){uiClunk(b,b.classList.contains('tb')?.6:1);glCrash();uiFlash(b.closest('.knob')||b);}
   const sw=e.target.closest&&e.target.closest('.engKnob,.engPos button');if(sw)uiClick(sw,true);},true);
 /* ---- arp controls: a switch to hold the arp on, RATE, and a pattern button ---- */
-const ARPC={on:false,rate:.5,mode:0};
+const ARPC={on:false,rate:.5,mode:0,tempo:.25};
 const ARPMODES=['DRIFT','UP','DOWN','UP·DN','RANDOM'];
-try{const a=JSON.parse(localStorage.getItem('driftArp')||'null');if(a){ARPC.rate=a.rate??.5;ARPC.mode=a.mode??0;}}catch(e){}
-function arpSave(){try{localStorage.setItem('driftArp',JSON.stringify({rate:ARPC.rate,mode:ARPC.mode}));}catch(e){}}
+try{const a=JSON.parse(localStorage.getItem('driftArp')||'null');if(a){ARPC.rate=a.rate??.5;ARPC.mode=a.mode??0;ARPC.tempo=a.tempo??.25;}}catch(e){}
+function arpSave(){try{localStorage.setItem('driftArp',JSON.stringify({rate:ARPC.rate,mode:ARPC.mode,tempo:ARPC.tempo}));}catch(e){}}
+// TEMPO: 50–110 BPM (default 65, the old fixed speed). Drives the arp, the percussion and how long chords last.
+const bpm=()=>Math.round(50+(ARPC.tempo??.25)*60),tempoK=()=>65/bpm();
 function arpSeq(c){const up=[c[1],c[2],c[3],c[4]-12].sort((a,b)=>a-b).concat([c[1]+12]);switch(ARPC.mode){case 1:return up;case 2:return up.slice().reverse();case 3:return up.concat(up.slice(1,-1).reverse());case 4:return up.map(()=>pick(up));default:return [c[1],c[2],c[3],c[4]-12,c[1]+12,c[4]-12,c[3],c[2]];}}
 function arpRateK(){return Math.pow(2,(.5-ARPC.rate)*2.2);}
 function setArpSwitch(on){ARPC.on=on;const b=document.getElementById('arpSw');if(b){b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);}
@@ -2390,7 +2392,7 @@ function arpBlink(){const l=arpBlink.el||(arpBlink.el=document.getElementById('a
 function initArpUI(){const sw=document.getElementById('arpSw'),md=document.getElementById('arpMode'),af=document.getElementById('arpF');if(!sw)return;
   sw.addEventListener('click',()=>{ensureAudio();setArpSwitch(!ARPC.on);uiClick(sw,ARPC.on);});
   md.textContent=ARPMODES[ARPC.mode];md.addEventListener('click',()=>{ensureAudio();ARPC.mode=(ARPC.mode+1)%ARPMODES.length;md.textContent=ARPMODES[ARPC.mode];arpSave();ARP.i=0;toast('ARP · '+ARPMODES[ARPC.mode]);});
-  buildFaders(af,[{l:'RATE',get:()=>ARPC.rate,set:v=>{ARPC.rate=v;arpSave();},show:()=>(1/(.23*arpRateK())).toFixed(1),def:.5}]);}
+  buildFaders(af,[{l:'TEMPO',sl:'BPM',get:()=>ARPC.tempo??.25,set:v=>{ARPC.tempo=v;arpSave();},show:()=>String(bpm()),def:.25},{l:'RATE',get:()=>ARPC.rate,set:v=>{ARPC.rate=v;arpSave();},show:()=>(1/(.23*tempoK()*arpRateK())).toFixed(1),def:.5}]);}
 // part lights breathe with how loud each part is
 function consoleGlow(){if(typeof ORB==='undefined')return;PARTS.forEach(p=>{const el=document.getElementById('kn-'+p.id);if(!el)return;const v=(S.on[p.id]?Math.round(clamp((ORB.lv[p.id]||0)*1.6)*10)/10:0);if(el._lv!==v){el._lv=v;el.style.setProperty('--lv',v);}});}
 setInterval(()=>{try{consoleGlow();}catch(e){}},120);
@@ -2868,7 +2870,7 @@ const ARP={on:false,t:rnd(50,100),dur:0,el:0,next:0,i:0,voice:'PLUCK'};
 function runArp(dt){if((S.club||0)>.25){ARP.on=false;return;}const forced=fxOn('arp')||ARPC.on;
   if(!ARP.on){ARP.t-=dt;if(ARP.t<=0||forced){ARP.on=true;ARP.dur=forced?9999:rnd(20,38);ARP.el=0;ARP.i=0;ARP.voice=pick(['PLUCK','POLY','PLUCK','BRASS','PAD','PAD']);if(!forced)toast('ARPEGGIATOR · '+(ARP.voice==='PAD'?padSet().n:ARP.voice));}return;}
   ARP.el+=dt;if(!forced&&ARP.el>ARP.dur){ARP.on=false;ARP.t=expRnd(110,30,320);return;}if(forced)ARP.dur=ARP.el+6;
-  ARP.next-=dt;if(ARP.next>0)return;const step=(phaseI===1?.19:phaseI===3?.28:.23)*(ruleIs('SLOW')?2:1);ARP.next=step*arpRateK();
+  ARP.next-=dt;if(ARP.next>0)return;const step=(phaseI===1?.19:phaseI===3?.28:.23)*(ruleIs('SLOW')?2:1)*tempoK();ARP.next=step*arpRateK();
   const c=chordNotes(),seq=arpSeq(c),m=seq[ARP.i%seq.length]-(phaseI===3?12:0),fade=clamp(Math.min(ARP.el/5,(ARP.dur-ARP.el)/5));ARP.i++;
   if(fade>.02){arpBlink();}if(fade>.02){analog(forced?'PAD':ARP.voice,m,.055*fade*(ARP.i%4===1?1.2:1)*(forced?1.1:1),ARP.i%2?-.35:.35,0);bassArpStep(m,step*arpRateK(),fade);}}
 /* ============================== 80s / 90s extras via power-ups: sub bass, choir, DX keys ============================== */
@@ -3744,7 +3746,7 @@ function percHit(v,t,vel,pan){if(!v||!A||!A.bassBus||!gate())return;const ctx=A.
 function percTick(dt){if(!A||S.killed||!A.bassBus||!S.on.air||PF.c.air<.02){PRC.next=0;return;}
   const kit=BASS.bio?bioBass():BASS.set;if(BASS.bio)BASS.set=kit;
   const ck=keyPc()+'|'+S.mode+'|'+chordDeg();if(kit!==PRC.kit||!PRC.pat){PRC.kit=kit;PRC.pat=percPattern(kit);}else if(ck!==PRC.ck)percMutate();PRC.ck=ck;
-  const ctx=A.ctx,now=ctx.currentTime,step=.23*arpRateK();if(!PRC.next||PRC.next<now-.2){PRC.next=now+.05;PRC.step=0;}
+  const ctx=A.ctx,now=ctx.currentTime,step=15/bpm();if(!PRC.next||PRC.next<now-.2){PRC.next=now+.05;PRC.step=0;}
   // how busy: your DENSITY fader, plus movement (except in MAN)
   const sp=clamp(S.speed/40),dens=clamp(PRC.dens*(MODE==='manual'?1:(.65+sp*.7)));
   const V=PKITS[kit]||PKITS[0];
@@ -4348,7 +4350,7 @@ let chordT=20;
 function updateTime(dt){const pi=Math.floor(clock/PHASE_LEN)%4;
   if(pi!==phaseI){phaseI=pi;const ph=PHASES[pi];toast(ph.n+(pi===0?' · NEW DAY':''));if(pi===0&&STARS.list.length)STARS.fade=1;
     if(!ruleIs('SCALE')&&(MODE==='semi'||MODE==='auto'))moodShift(ph.n);}
-  if(!A||S.killed)return;if(MODE==='manual'||MODE==='world')return;if(!ruleIs('DRONE'))chordT-=dt;if(chordT<=0){chordT=(Math.random()<.25?rnd(30,45):rnd(16,26))*phv('chord')*(ruleIs('SLOW')?2:1)*(1+sleepW());if(clubProgOn()){chordT=90;}else if(S.moodPending){const f=S.moodPending;S.moodPending=null;f();}else if(!(Math.random()<.18&&unison(1,'',true))){S.chordStep++;setChord();}if(S.hum.force!=null&&Math.random()<.5){S.hum.force=null;setHum();}}}
+  if(!A||S.killed)return;if(MODE==='manual'||MODE==='world')return;if(!ruleIs('DRONE'))chordT-=dt;if(chordT<=0){chordT=(Math.random()<.25?rnd(30,45):rnd(16,26))*Math.sqrt(tempoK())*phv('chord')*(ruleIs('SLOW')?2:1)*(1+sleepW());if(clubProgOn()){chordT=90;}else if(S.moodPending){const f=S.moodPending;S.moodPending=null;f();}else if(!(Math.random()<.18&&unison(1,'',true))){S.chordStep++;setChord();}if(S.hum.force!=null&&Math.random()<.5){S.hum.force=null;setHum();}}}
 // SOUND MODE: MAN = only your faders · WORLD = your faders plus weather and places · SEMI = today's automation · AUTO = SEMI plus Drift composing slow phrases
 let MODE=(()=>{try{const m=localStorage.getItem('driftMode');return ['manual','world','semi','auto'].includes(m)?m:'semi';}catch(e){return 'semi';}})();
 function setMode(m){const was=MODE;MODE=m;try{localStorage.setItem('driftMode',m);}catch(e){}if(m==='auto'&&was!=='auto')compStart();if(was==='auto'&&m!=='auto')compStop();modeUI();}
@@ -4363,19 +4365,19 @@ const CP=[// [id, get, set, lo, hi, glide seconds]
   ['hum.sub',()=>S.hum.sub??.47,v=>S.hum.sub=v,.32,.62,14],['hum.bright',()=>MAN.v.hum.bright,v=>MAN.v.hum.bright=v,.28,.66,12],['hum.width',()=>MAN.v.hum.width,v=>MAN.v.hum.width=v,.35,.8,14],['hum.swell',()=>MAN.v.hum.swell,v=>MAN.v.hum.swell=v,.3,.78,12],
   ['pad.wash',()=>S.pad.wash??.5,v=>S.pad.wash=v,.4,.88,14],['pad.filt',()=>MAN.v.pad.filt,v=>MAN.v.pad.filt=v,.28,.72,10],['pad.voicing',()=>MAN.v.pad.voicing,v=>MAN.v.pad.voicing=v,.3,.72,16],['pad.motion',()=>MAN.v.pad.motion,v=>MAN.v.pad.motion=v,.3,.78,14],
   ['keys.tone',()=>S.keys.tone??.5,v=>S.keys.tone=v,.28,.72,10],['keys.echo',()=>S.keys.echo??.4,v=>S.keys.echo=v,.22,.72,12],['keys.len',()=>S.keys.len??.5,v=>S.keys.len=v,.32,.85,14],
-  ['arp.rate',()=>ARPC.rate,v=>ARPC.rate=v,.28,.68,10],
+  ['arp.rate',()=>ARPC.rate,v=>ARPC.rate=v,.28,.68,10],['tempo',()=>ARPC.tempo??.25,v=>ARPC.tempo=v,.12,.45,40],
   ['perc.dens',()=>PRC.dens,v=>PRC.dens=v,.2,.72,16],['perc.tone',()=>PRC.tone,v=>PRC.tone=v,.3,.75,12],['perc.room',()=>PRC.room,v=>PRC.room=v,.15,.6,16],['perc.feel',()=>PRC.feel,v=>PRC.feel=v,.2,.7,20],
   ['lv.hum',()=>MAN.lv.hum,v=>MAN.lv.hum=v,-.1,.1,22],['lv.pad',()=>MAN.lv.pad,v=>MAN.lv.pad=v,-.1,.1,22],['lv.keys',()=>MAN.lv.keys,v=>MAN.lv.keys=v,-.12,.08,22],['lv.air',()=>MAN.lv.air,v=>MAN.lv.air=v,-.12,.06,22]];
 // levels are offsets from your own level (lo/hi above), everything else is absolute
 const isLv=id=>id.startsWith('lv.');
 // moods: where each scene leans (0 = bottom of the range, 1 = top); anything not named is free
 const SCENES=[
-  {n:'WASH',  c:{'m.space':.9,'m.echo':.45,'pad.wash':.9,'pad.filt':.4,'keys.len':.85,'lv.keys':.2,'m.sat':.1,'g.depth':.8,'perc.dens':.15,'perc.room':.9,'perc.tone':.15,'perc.dens':.3},arp:.1,keys:.5,perc:0.3,perc:0.45},
-  {n:'GLASS', c:{'m.space':.55,'m.echo':.85,'keys.tone':.85,'keys.echo':.8,'pad.filt':.75,'hum.bright':.7,'m.sat':.05,'m.drift':.15,'perc.tone':.85,'perc.dens':.5},arp:.8,keys:1,perc:0.6},
-  {n:'HAZE',  c:{'m.drift':.85,'m.sat':.75,'m.drive':.6,'pad.filt':.25,'hum.swell':.8,'keys.tone':.25,'m.space':.6,'perc.feel':.85,'perc.tone':.25},arp:.25,keys:.6,perc:0.5},
+  {n:'WASH',  c:{'m.space':.9,'m.echo':.45,'pad.wash':.9,'pad.filt':.4,'keys.len':.85,'lv.keys':.2,'m.sat':.1,'g.depth':.8,'perc.dens':.15,'perc.room':.9,'perc.tone':.15,'perc.dens':.3,'tempo':0.2,'tempo':0.05},arp:.1,keys:.5,perc:0.3,perc:0.45},
+  {n:'GLASS', c:{'m.space':.55,'m.echo':.85,'keys.tone':.85,'keys.echo':.8,'pad.filt':.75,'hum.bright':.7,'m.sat':.05,'m.drift':.15,'perc.tone':.85,'perc.dens':.5,'tempo':0.6},arp:.8,keys:1,perc:0.6},
+  {n:'HAZE',  c:{'m.drift':.85,'m.sat':.75,'m.drive':.6,'pad.filt':.25,'hum.swell':.8,'keys.tone':.25,'m.space':.6,'perc.feel':.85,'perc.tone':.25,'tempo':0.3},arp:.25,keys:.6,perc:0.5},
   {n:'DEEP',  c:{'hum.sub':.9,'pad.filt':.15,'m.space':.85,'m.echo':.25,'hum.bright':.2,'lv.hum':.9,'lv.keys':.1,'g.amb':.7},arp:0,keys:.25},
-  {n:'BLOOM', c:{'g.spread':.9,'g.motion':.85,'hum.width':.9,'pad.motion':.85,'pad.voicing':.8,'m.space':.7,'lv.pad':.8,'perc.dens':.8,'perc.feel':.6},arp:.55,keys:.8,perc:0.7},
-  {n:'SPARSE',c:{'m.space':.8,'m.echo':.7,'keys.len':.3,'pad.wash':.5,'lv.pad':.25,'lv.hum':.3,'g.depth':.4,'arp.rate':.2,'perc.dens':.2,'perc.room':.75},arp:.3,keys:.9,perc:0.4}];
+  {n:'BLOOM', c:{'g.spread':.9,'g.motion':.85,'hum.width':.9,'pad.motion':.85,'pad.voicing':.8,'m.space':.7,'lv.pad':.8,'perc.dens':.8,'perc.feel':.6,'tempo':0.85},arp:.55,keys:.8,perc:0.7},
+  {n:'SPARSE',c:{'m.space':.8,'m.echo':.7,'keys.len':.3,'pad.wash':.5,'lv.pad':.25,'lv.hum':.3,'g.depth':.4,'arp.rate':.2,'perc.dens':.2,'perc.room':.75,'tempo':0.25},arp:.3,keys:.9,perc:0.4}];
 const COMP={scene:null,sceneT:0,phraseT:0,tg:{},wrote:{},hold:{},snap:null,base:{},partT:0,instT:0,arpT:0};
 function compSnap(){const o={};for(const [id,get] of CP)o[id]=get();o.arpOn=ARPC.on;o.arpMode=ARPC.mode;o.keysOct=S.keys.oct||0;o.on={...S.on};return o;}
 function compStart(){COMP.snap=compSnap();try{localStorage.setItem('driftAutoSnap',JSON.stringify(COMP.snap));}catch(e){}COMP.base={};for(const [id,get] of CP)if(isLv(id))COMP.base[id]=get();COMP.wrote={};COMP.hold={};COMP.sceneT=0;COMP.phraseT=0;COMP.partT=rnd(40,80);COMP.instT=rnd(70,140);COMP.arpT=rnd(20,40);}
