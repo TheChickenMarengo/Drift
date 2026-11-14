@@ -581,7 +581,7 @@ html body.imm #imm .arpBox .tog.on b{top:19px;}
   <div class="wsize" id="freshRow"><span>this world</span><button id="worldFresh">fresh start</button></div>
 </section>
 <section class="pSec"><h3>Play</h3><div class="pRow"><button class="pill" id="sleep">sleep</button></div>
-  <div class="wsize" id="bgRow"><span>keep playing in background</span><button data-bg="1">on</button><button data-bg="0">off</button></div><div class="wsize" id="tvRow"><span>tv view · full-screen world for casting</span><button id="tvGo">start</button></div></section>
+  <div class="wsize" id="bgRow"><span>keep playing in background</span><button data-bg="1">on</button><button data-bg="0">off</button></div><div class="wsize" id="bgModeRow"><span>background sound · stream is the usual one</span><button data-bgm="stream">stream</button><button data-bgm="direct">direct</button></div><div class="wsize" id="tvRow"><span>tv view · full-screen world for casting</span><button id="tvGo">start</button></div></section>
 <section class="pSec"><h3>Display</h3><div class="pRow"><button class="tb" id="fsBtn" aria-label="full screen">⛶ full screen</button><button class="tb" id="crtBtn" aria-label="CRT glass on or off">▢ crt glass</button><button class="tb" id="themeBtn" aria-label="dark or light skin">◐ dark</button></div></section>
 <details class="pSec" id="pHelp"><summary>How to play</summary>
   <div class="guide">
@@ -5132,20 +5132,34 @@ function bgIcon(){if(BG.icon)return BG.icon;try{const cv=document.createElement(
 function silentWav(){const n=8000*12,b=new Uint8Array(44+n),v=new DataView(b.buffer),w=(o,s)=>{for(let i=0;i<s.length;i++)b[o+i]=s.charCodeAt(i);};
   w(0,'RIFF');v.setUint32(4,36+n,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,8000,true);v.setUint16(32,1,true);v.setUint16(34,8,true);w(36,'data');v.setUint32(40,n,true);b.fill(128,44);
   return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));}
+// two ways to keep sound going with the screen off (pause menu): STREAM (default, v159 method) sends the mix through a media
+// stream <audio> element while hidden, which Android treats as real media playback; DIRECT leaves it on Web Audio and only plays
+// a silent loop for the lock-screen controls (v174; on the Pixel the sound stopped in the background)
+BG.mode='stream';try{if(localStorage.getItem('driftBgMode')==='direct')BG.mode='direct';}catch(e){}
 // set up once, inside a tap (browsers only let media start from a gesture)
 function bgPrep(){if(!A||BG.el)return;
-  try{const c=A.ctx;dlog('audio start · '+c.sampleRate+' Hz · base '+Math.round((c.baseLatency||0)*1000)+' ms · out '+Math.round((c.outputLatency||0)*1000)+' ms · '+(MOBILE?'mobile':'desktop')+' · '+(matchMedia('(display-mode: standalone)').matches?'app':'tab'));
-    c.addEventListener('statechange',()=>dlog('ctx '+c.state+(document.hidden?' (hidden)':'')));}catch(e){}
-  try{const el=document.createElement('audio');el.src=silentWav();el.loop=true;el.setAttribute('playsinline','');el.style.display='none';document.body.appendChild(el);BG.el=el;
-    el.addEventListener('pause',()=>{if(BG.own){BG.own=false;return;}dlog('lock-screen channel paused by the phone'+(document.hidden?' (hidden)':''));if(!S.killed){BG.sysPaused=true;setKill(true);}});
+  if(!BG.ctxLog){BG.ctxLog=1;try{const c=A.ctx;dlog('audio start · '+c.sampleRate+' Hz · base '+Math.round((c.baseLatency||0)*1000)+' ms · out '+Math.round((c.outputLatency||0)*1000)+' ms · '+(MOBILE?'mobile':'desktop')+' · '+(matchMedia('(display-mode: standalone)').matches?'app':'tab'));
+    c.addEventListener('statechange',()=>dlog('ctx '+c.state+(document.hidden?' (hidden)':'')));}catch(e){}}
+  try{const el=document.createElement('audio');el.setAttribute('playsinline','');el.style.display='none';
+    if(BG.mode==='stream'){if(!BG.dest){BG.dest=A.ctx.createMediaStreamDestination();A.ana.connect(BG.dest);}el.srcObject=BG.dest.stream;el.muted=true;}
+    else{el.src=silentWav();el.loop=true;}
+    document.body.appendChild(el);BG.el=el;
+    // the phone may pause the channel (e.g. when hiding the page): log it and try to restart, never treat it as the player pressing pause
+    el.addEventListener('pause',()=>{if(BG.own){BG.own=false;return;}dlog('channel paused by the phone'+(document.hidden?' (hidden)':''));if(!S.killed)setTimeout(()=>{if(!S.killed&&BG.el===el&&el.paused)el.play().then(()=>dlog('channel restarted')).catch(e=>dlog('channel restart refused · '+e.name));},300);});
     ['play','waiting','stalled','error'].forEach(ev=>el.addEventListener(ev,()=>dlog('channel '+ev)));
-    if(!S.killed)el.play().catch(e=>dlog('channel play refused · '+e.name));}catch(e){BG.el=null;dlog('channel failed · '+e.message);}
+    dlog('channel mode '+BG.mode);
+    if(!S.killed||BG.mode==='stream')el.play().catch(e=>dlog('channel play refused · '+e.name));}catch(e){BG.el=null;dlog('channel failed · '+e.message);}
   bgSession();bgWatch();}
-// keep the lock-screen channel in step with pause (called from setKill)
-function bgSync(){const el=BG.el;if(!el)return;if(S.killed){if(!el.paused){BG.own=true;el.pause();}}else if(el.paused)el.play().catch(e=>dlog('channel play refused · '+e.name));}
+// STREAM: hand the sound to the media channel while hidden (only once it's actually playing, so nothing goes silent)
+function bgRoute(on){if(!A||!BG.el||BG.mode!=='stream'||!!BG.routed===on)return;const el=BG.el;
+  if(on){el.muted=false;el.play().then(()=>{if(!BG.hidden){el.muted=true;return;}try{A.ana.disconnect(A.ctx.destination);}catch(e){}BG.routed=true;dlog('sound → media channel');}).catch(e=>{el.muted=true;dlog('channel refused · '+e.name+' · sound stays on web audio');});}
+  else{try{A.ana.connect(A.ctx.destination);}catch(e){}el.muted=true;BG.routed=false;dlog('sound → web audio');}}
+function setBgMode(m){if(BG.mode===m)return;bgRoute(false);BG.mode=m;try{localStorage.setItem('driftBgMode',m);}catch(e){}const o=BG.el;BG.el=null;if(o){BG.own=true;try{o.pause();o.remove();}catch(e){}}bgPrep();bgUI();}
+// DIRECT: keep the silent loop in step with pause (called from setKill)
+function bgSync(){const el=BG.el;if(!el||BG.mode!=='direct')return;if(S.killed){if(!el.paused){BG.own=true;el.pause();}}else if(el.paused)el.play().catch(e=>dlog('channel play refused · '+e.name));}
 function bgSession(){const ms=navigator.mediaSession;if(!ms)return;try{
   ms.metadata=new MediaMetadata({title:'Drift',artist:(worldName?worldName+' · ':'')+(typeof AGES!=='undefined'?AGES[AGE.i].n.toLowerCase():'')+' age',album:'ambient field synth',artwork:[{src:bgIcon(),sizes:'96x96',type:'image/png'}]});
-  ms.setActionHandler('play',()=>{dlog('lock screen: play');BG.sysPaused=false;if(S.killed)setKill(false);else bgSync();ms.playbackState='playing';});
+  ms.setActionHandler('play',()=>{dlog('lock screen: play');if(S.killed)setKill(false);else bgSync();if(BG.el&&BG.el.paused)BG.el.play().catch(()=>{});ms.playbackState='playing';});
   ms.setActionHandler('pause',()=>{dlog('lock screen: pause');if(!S.killed)setKill(true);ms.playbackState='paused';});
   try{ms.setActionHandler('nexttrack',()=>{ensureAudio();unison(1,'',false);});}catch(e){}
   try{ms.setActionHandler('previoustrack',()=>{ensureAudio();unison(-1,'',false);});}catch(e){}
@@ -5163,15 +5177,15 @@ function bgTick(){const now=performance.now(),gap=BG.last?now-BG.last:0;if(now-B
 function bgHide(){BG.hidden=true;dlog('→ background'+(BG.on?'':' (background play off)')+(S.killed?' (paused)':''));dsave();if(!A)return;
   if(!BG.on||S.killed){// not playing in the background: fade out and pause cleanly
     if(!S.killed){BG.autoPaused=true;setKill(true);}return;}
-  BG.wasAuto=S.auto;if(!S.auto&&!SHOP.open&&!RIDE.on)setWander(true);BG.headless=true;last=performance.now();BG.last=0;BG.gN=0;BG.gMax=0;clearInterval(BG.iv);BG.iv=setInterval(bgTick,40);bgSync();bgSession();}
-function bgShow(){BG.hidden=false;dlog('→ foreground · ctx '+(A?A.ctx.state:'none'));clearInterval(BG.iv);BG.iv=null;if(BG.headless){BG.headless=false;last=performance.now();if(!BG.wasAuto&&S.auto)setWander(false);}
+  BG.wasAuto=S.auto;if(!S.auto&&!SHOP.open&&!RIDE.on)setWander(true);BG.headless=true;last=performance.now();BG.last=0;BG.gN=0;BG.gMax=0;clearInterval(BG.iv);BG.iv=setInterval(bgTick,40);bgSync();bgRoute(true);bgSession();}
+function bgShow(){BG.hidden=false;dlog('→ foreground · ctx '+(A?A.ctx.state:'none'));clearInterval(BG.iv);BG.iv=null;if(BG.headless){BG.headless=false;last=performance.now();if(!BG.wasAuto&&S.auto)setWander(false);}bgRoute(false);
   if(BG.autoPaused){BG.autoPaused=false;if(S.killed)setKill(false);}if(A&&!S.killed&&A.ctx.state!=='running')A.ctx.resume().catch(()=>{});bgSession();}
 // phones fire visibilitychange several times when you switch apps or lock; wait for it to settle
 let bgVisT=0;
 document.addEventListener('visibilitychange',()=>{dlog('vis '+(document.hidden?'hidden':'visible'));clearTimeout(bgVisT);bgVisT=setTimeout(()=>{try{if(document.hidden===BG.hidden)return;document.hidden?bgHide():bgShow();}catch(e){}},350);});
 ['freeze','resume'].forEach(ev=>document.addEventListener(ev,()=>dlog('page '+ev)));
 window.addEventListener('pageshow',e=>dlog('pageshow'+(e.persisted?' (restored)':'')));window.addEventListener('pagehide',()=>{dlog('pagehide');dsave();});
-function bgUI(){document.querySelectorAll('#bgRow [data-bg]').forEach(b=>b.classList.toggle('on',(b.dataset.bg==='1')===BG.on));}
+function bgUI(){document.querySelectorAll('#bgRow [data-bg]').forEach(b=>b.classList.toggle('on',(b.dataset.bg==='1')===BG.on));document.querySelectorAll('#bgModeRow [data-bgm]').forEach(b=>b.classList.toggle('on',b.dataset.bgm===BG.mode));}
 function setBg(on){BG.on=on;try{localStorage.setItem('driftBg',on?'1':'0');}catch(e){}bgUI();}
 
 /* ============================== INPUT ============================== */
@@ -5280,9 +5294,10 @@ document.querySelectorAll('.wsize [data-ws]').forEach(b=>b.addEventListener('cli
 document.querySelector('#engSw .engKnob').addEventListener('click',()=>{ensureAudio();setEngine(ENGS[(ENGS.indexOf(ENG.cur)+1)%ENGS.length]);});document.querySelectorAll('#engSw [data-e]').forEach(b=>b.addEventListener('click',()=>{ensureAudio();setEngine(b.dataset.e);}));updateEngUI();
 document.getElementById('unequip').addEventListener('click',()=>{ensureAudio();unequip();});initArpUI();initPause();wearApply();document.getElementById('start').addEventListener('click',()=>{try{powerOn();}catch(e){}});
 try{initSkin();}catch(e){console.error(e);}
+document.querySelectorAll('#bgModeRow [data-bgm]').forEach(b=>b.addEventListener('click',()=>{ensureAudio();setBgMode(b.dataset.bgm);}));
 document.getElementById('diagBtn').addEventListener('click',()=>{const p=document.getElementById('diagPre');diagShow(p.hidden);});
 document.getElementById('diagClr').addEventListener('click',()=>{DIAG.log=[];dsave();diagShow(true);});
-document.getElementById('diagCopy').addEventListener('click',()=>{const t='Drift v174 audio log\n'+navigator.userAgent+'\n'+DIAG.log.join('\n');const ok=()=>toast('LOG COPIED'),no=()=>{diagShow(true);const r=document.createRange();r.selectNodeContents(document.getElementById('diagPre'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('LOG SELECTED · COPY IT');};try{navigator.clipboard.writeText(t).then(ok,no);}catch(e){no();}});
+document.getElementById('diagCopy').addEventListener('click',()=>{const t='Drift v175 audio log\n'+navigator.userAgent+'\n'+DIAG.log.join('\n');const ok=()=>toast('LOG COPIED'),no=()=>{diagShow(true);const r=document.createRange();r.selectNodeContents(document.getElementById('diagPre'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('LOG SELECTED · COPY IT');};try{navigator.clipboard.writeText(t).then(ok,no);}catch(e){no();}});
 document.getElementById('devWhale').addEventListener('click',()=>{ensureAudio();devWhale(false);});document.getElementById('devBlue').addEventListener('click',()=>{ensureAudio();devWhale(true);});
 document.getElementById('devQuake').addEventListener('click',()=>{ensureAudio();if(!DIS.cur)startQuake();});
 document.getElementById('octDn').addEventListener('click',()=>{ensureAudio();octStep(-1);});
