@@ -134,7 +134,7 @@ body.dark .knob .led{box-shadow:0 0 0 1.5px #050506,0 0 0 2.5px #4a4a50,0 0 0 3.
 body.dark .gi,body.dark .howto{color:#a8a7a0;}body.dark .guide{border-color:#2a2a2e;}
 body.dark .world button,body.dark .midi button:not(.tg){background:#ecebe6;color:#111;}body.dark .seg button.on{background:#ecebe6;color:#111;}
 body.dark .midi{background:#202024;box-shadow:inset 0 0 0 1px #2e2e33;}body.dark .midi .mrow,body.dark .midi select,body.dark .midi input{background:#26262a;color:var(--ink);}body.dark .midi button.tg{background:#2e2e33;color:var(--ink);}
-.synthview{margin-top:12px;border-radius:12px;overflow:hidden;background:#0b0b0d;box-shadow:inset 0 0 0 1px #2a2a2e;}.synthview.hide{display:none;}.synthview canvas{display:block;width:100%;height:500px;}
+.synthview{margin-top:12px;border-radius:12px;overflow:hidden;background:#0b0b0d;box-shadow:inset 0 0 0 1px #2a2a2e;}.synthview.hide{display:none;}#diagPre{margin:8px 0 0;max-height:42vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font:11px/1.35 ui-monospace,Menlo,Consolas,monospace;background:#0b0b0d;color:#d8d2c4;padding:8px;border-radius:8px;user-select:text;-webkit-user-select:text;}.synthview canvas{display:block;width:100%;height:500px;}
 .world.dev button.on{background:var(--orange);}
 .guide{margin-top:22px;border-top:1px solid var(--line);padding-top:12px;}
 .guide h2{font-size:10px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;margin:16px 0 10px;color:var(--ink);display:flex;justify-content:space-between;}
@@ -613,6 +613,7 @@ html body.imm #imm .arpBox .tog.on b{top:19px;}
 </details>
 <details class="pSec" id="pDev"><summary>Dev tools</summary>
   <div class="world dev"><span>dev</span><button id="devTime">next time of day</button><button id="devSeason">next season</button><button id="devQuake">quake</button><button id="devSynth">synth view</button><button id="devWhale">whales</button><button id="devBlue">blue whale</button></div>
+  <div class="world dev" id="diagRow"><span>log</span><button id="diagBtn">audio log</button><button id="diagCopy">copy</button><button id="diagClr">clear</button></div><pre id="diagPre" hidden></pre>
   <div class="synthview hide" id="synthview"><canvas id="svc"></canvas></div>
 </details>
 </div></div>
@@ -1117,6 +1118,7 @@ function applyAudio2(){const t=A.ctx.currentTime,e=S.eff,fx=S.fxAmt,on=S.on,ex=e
   layer('city',S.city>.02?S.city*.9*(.2+.8*MODK())*(1-.75*(S.club||0)):0);A.padF.Q.setTargetAtTime(Math.max(.6,padSet().q||0)+S.city*1.2,t,.8);
   const airT=0,tk=1-.6*W.fm-.85*W.chip-.5*W.gran,td=1+(S.city*2.4+fx.wow*2.6+airT+WXM.storm*1.3)*tk;A.tapePre.gain.setTargetAtTime(td,t,.8);A.tapePost.gain.setTargetAtTime(1/(1+(S.city*1.7+fx.wow*1.7+airT*.75+WXM.storm*.9)*tk),t,.8);layer('sho',fx.sho>.01?fx.sho*.9:0);layer('rain',Math.max(fx.rain>.01?fx.rain*.07:0,WX.amt.storm>.02?WX.amt.storm*.06:0,(WX.amt.drizzle||0)>.02?WX.amt.drizzle*.035:0)*(1-.6*SEA.ice));}
 function setKill(v){if(A)_last.delete(A.master.gain);S.killed=v;try{if(navigator.mediaSession)navigator.mediaSession.playbackState=v?'paused':'playing';}catch(e){}document.getElementById('kill').classList.toggle('off',v);document.querySelector('#kill span').textContent=v?'paused':'pause';
+  try{dlog(v?'pause':'play');bgSync();}catch(e){}
   if(!A)return;const t=A.ctx.currentTime;A.master.gain.cancelScheduledValues(t);A.master.gain.setValueAtTime(A.master.gain.value,t);
   if(v){A.master.gain.linearRampToValueAtTime(0,t+.04);setTimeout(()=>{if(S.killed)A.ctx.suspend().catch(()=>{});},80);}
   else{A.ctx.resume().catch(()=>{});A.master.gain.setTargetAtTime(.68,t,.4);}}
@@ -5110,39 +5112,65 @@ function frameBody(now){const dt=Math.min(.05,(now-last)/1000);last=now;const t=
   rAcc+=dt;if(rAcc>=1/(render.slow?20:31)){rAcc=0;const r0=performance.now();render(t);const rt=performance.now()-r0;render.avg=(render.avg||8)*.9+rt*.1;render.slow=render.avg>(render.slow?9:14)||frameBody.gap>(render.slow?44:52);}trayT-=dt;if(trayT<=0){trayT=.25;renderTray();}vuT-=dt;if(vuT<=0){vuT=.09;updateSlotVU();}audT-=dt;if(audT<=0){audT=.1;applyAudio();}
 }
 
-/* ---- background play: when the screen is off or you switch apps, Drift keeps playing. The world logic runs on a timer without drawing,
-   wander takes over, and the sound goes through a media channel so the phone shows Drift with play/pause/next on the lock screen ---- */
-const BG={on:true,hidden:false,iv:null,dest:null,el:null,wasAuto:false,routed:false,last:0,icon:null};
+/* ---- background play: when the screen is off or you switch apps, Drift keeps playing. The world logic runs on a timer without drawing
+   and wander takes over. v174: the sound always stays on the normal Web Audio output (no more re-routing through an <audio> element, which
+   relayed every sample through a media stream and stuttered on the phone). A separate silent looping <audio> element only exists so the
+   phone shows Drift on the lock screen with play/pause/next. ---- */
+const BG={on:true,hidden:false,iv:null,el:null,wasAuto:false,last:0,icon:null,own:false,gN:0,gMax:0,wd:null,wdLast:0,fb:-1};
 try{if(localStorage.getItem('driftBg')==='0')BG.on=false;}catch(e){}
+/* ---- diagnostic log (pause menu > dev tools > audio log): visibility, page lifecycle, audio context state, output glitches,
+   timer gaps. Kept in localStorage so it survives a reload; copy it from the menu and paste it into the chat ---- */
+const DIAG={log:[],saveT:0};
+try{const s=localStorage.getItem('driftDiag');if(s)DIAG.log=JSON.parse(s).slice(-300);}catch(e){}
+function dlog(m){try{const d=new Date();DIAG.log.push(d.toTimeString().slice(0,8)+'.'+String(d.getMilliseconds()).padStart(3,'0')+' '+m);if(DIAG.log.length>300)DIAG.log.splice(0,DIAG.log.length-300);clearTimeout(DIAG.saveT);DIAG.saveT=setTimeout(dsave,1500);const p=document.getElementById('diagPre');if(p&&!p.hidden)diagShow(true);}catch(e){}}
+function dsave(){try{localStorage.setItem('driftDiag',JSON.stringify(DIAG.log));}catch(e){}}
+function diagShow(on){const p=document.getElementById('diagPre');if(!p)return;p.hidden=!on;if(on){p.textContent=DIAG.log.length?DIAG.log.join('\n'):'(empty)';p.scrollTop=p.scrollHeight;}}
 function bgIcon(){if(BG.icon)return BG.icon;try{const cv=document.createElement('canvas');cv.width=cv.height=96;const x=cv.getContext('2d');x.fillStyle='#0e0d0b';x.fillRect(0,0,96,96);
   const px=(a,b,w,h,c)=>{x.fillStyle=c;x.fillRect(a*8,b*8,w*8,h*8);};px(4,2,4,1,'#f2ece0');px(3,3,6,1,'#f2ece0');px(2,4,8,4,'#f2ece0');px(3,8,6,1,'#f2ece0');px(4,9,4,1,'#f2ece0');px(5,5,1,2,'#0e0d0b');px(7,5,1,2,'#0e0d0b');px(1,1,1,1,'#ff5a1f');px(10,10,1,1,'#3d6bff');px(10,2,1,1,'#2fbf5b');
   BG.icon=cv.toDataURL('image/png');}catch(e){BG.icon='';}return BG.icon;}
+// 12 s of silence as an 8-bit 8 kHz WAV (phones only show lock-screen controls for media longer than ~5 s)
+function silentWav(){const n=8000*12,b=new Uint8Array(44+n),v=new DataView(b.buffer),w=(o,s)=>{for(let i=0;i<s.length;i++)b[o+i]=s.charCodeAt(i);};
+  w(0,'RIFF');v.setUint32(4,36+n,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,8000,true);v.setUint16(32,1,true);v.setUint16(34,8,true);w(36,'data');v.setUint32(40,n,true);b.fill(128,44);
+  return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));}
 // set up once, inside a tap (browsers only let media start from a gesture)
-function bgPrep(){if(!A||BG.el)return;try{BG.dest=A.ctx.createMediaStreamDestination();A.ana.connect(BG.dest);const el=document.createElement('audio');el.srcObject=BG.dest.stream;el.muted=true;el.setAttribute('playsinline','');el.style.display='none';document.body.appendChild(el);BG.el=el;el.play().catch(()=>{});}catch(e){BG.el=null;}
-  bgSession();}
+function bgPrep(){if(!A||BG.el)return;
+  try{const c=A.ctx;dlog('audio start · '+c.sampleRate+' Hz · base '+Math.round((c.baseLatency||0)*1000)+' ms · out '+Math.round((c.outputLatency||0)*1000)+' ms · '+(MOBILE?'mobile':'desktop')+' · '+(matchMedia('(display-mode: standalone)').matches?'app':'tab'));
+    c.addEventListener('statechange',()=>dlog('ctx '+c.state+(document.hidden?' (hidden)':'')));}catch(e){}
+  try{const el=document.createElement('audio');el.src=silentWav();el.loop=true;el.setAttribute('playsinline','');el.style.display='none';document.body.appendChild(el);BG.el=el;
+    el.addEventListener('pause',()=>{if(BG.own){BG.own=false;return;}dlog('lock-screen channel paused by the phone'+(document.hidden?' (hidden)':''));if(!S.killed){BG.sysPaused=true;setKill(true);}});
+    ['play','waiting','stalled','error'].forEach(ev=>el.addEventListener(ev,()=>dlog('channel '+ev)));
+    if(!S.killed)el.play().catch(e=>dlog('channel play refused · '+e.name));}catch(e){BG.el=null;dlog('channel failed · '+e.message);}
+  bgSession();bgWatch();}
+// keep the lock-screen channel in step with pause (called from setKill)
+function bgSync(){const el=BG.el;if(!el)return;if(S.killed){if(!el.paused){BG.own=true;el.pause();}}else if(el.paused)el.play().catch(e=>dlog('channel play refused · '+e.name));}
 function bgSession(){const ms=navigator.mediaSession;if(!ms)return;try{
   ms.metadata=new MediaMetadata({title:'Drift',artist:(worldName?worldName+' · ':'')+(typeof AGES!=='undefined'?AGES[AGE.i].n.toLowerCase():'')+' age',album:'ambient field synth',artwork:[{src:bgIcon(),sizes:'96x96',type:'image/png'}]});
-  ms.setActionHandler('play',()=>{if(S.killed)setKill(false);if(BG.el)BG.el.play().catch(()=>{});ms.playbackState='playing';});
-  ms.setActionHandler('pause',()=>{if(!S.killed)setKill(true);ms.playbackState='paused';});
+  ms.setActionHandler('play',()=>{dlog('lock screen: play');BG.sysPaused=false;if(S.killed)setKill(false);else bgSync();ms.playbackState='playing';});
+  ms.setActionHandler('pause',()=>{dlog('lock screen: pause');if(!S.killed)setKill(true);ms.playbackState='paused';});
   try{ms.setActionHandler('nexttrack',()=>{ensureAudio();unison(1,'',false);});}catch(e){}
   try{ms.setActionHandler('previoustrack',()=>{ensureAudio();unison(-1,'',false);});}catch(e){}
   ms.playbackState=S.killed?'paused':'playing';}catch(e){}}
-// hand the sound to the media channel (only once it's actually playing, so nothing ever goes silent)
-function bgRoute(on){if(!A||!BG.el||BG.routed===on)return;const el=BG.el;
-  if(on){el.muted=false;el.play().then(()=>{if(!BG.hidden){el.muted=true;return;}try{A.ana.disconnect(A.ctx.destination);}catch(e){}BG.routed=true;}).catch(()=>{el.muted=true;});}
-  else{try{A.ana.connect(A.ctx.destination);}catch(e){}el.muted=true;BG.routed=false;}}
-// phones throttle hidden-page timers to about once a second, so catch up on the real time that passed in 50 ms steps (frameBody caps dt at 50 ms)
-function bgTick(){const now=performance.now();if(now-BG.last<25)return;BG.last=now;// if the phone suspends the audio, wake it at most once a second and never while paused (retrying every tick made it cut in and out)
-try{if(A&&!S.killed&&A.ctx.state==='suspended'&&now-(BG.resumeAt||0)>1000){BG.resumeAt=now;A.ctx.resume().catch(()=>{});}}catch(e){}try{let g=Math.min(5000,now-last);while(g>0){const s=Math.min(50,g);frameBody(last+s);g-=s;}}catch(e){}}
-function bgHide(){BG.hidden=true;if(!A)return;
+// once a second: output glitches (Chrome's playoutStats, where available) and timer gaps
+function bgWatch(){if(BG.wd)return;BG.wdLast=performance.now();BG.wd=setInterval(()=>{const now=performance.now(),gap=now-BG.wdLast;BG.wdLast=now;
+  if(gap>2500)dlog('page was frozen or throttled for '+(gap/1000).toFixed(1)+' s'+(document.hidden?' (hidden)':''));
+  try{const ps=A&&A.ctx.playoutStats;if(ps){const f=ps.fallbackFramesEvents;if(BG.fb>=0&&f>BG.fb)dlog('AUDIO GLITCH × '+(f-BG.fb)+' · '+Math.round(ps.fallbackDuration||0)+' ms total silence-filled'+(document.hidden?' (hidden)':''));BG.fb=f;}}catch(e){}
+  if(BG.hidden&&BG.gN){dlog('background timer: '+BG.gN+' late ticks, worst '+Math.round(BG.gMax)+' ms');BG.gN=0;BG.gMax=0;}},1000);}
+function bgTick(){const now=performance.now(),gap=BG.last?now-BG.last:0;if(now-BG.last<25)return;BG.last=now;if(gap>200){BG.gN++;BG.gMax=Math.max(BG.gMax,gap);}
+  // if the phone suspends the audio, wake it at most once a second and never while paused
+  try{if(A&&!S.killed&&A.ctx.state!=='running'&&now-(BG.resumeAt||0)>1000){BG.resumeAt=now;dlog('ctx '+A.ctx.state+' while hidden · resuming');A.ctx.resume().catch(e=>dlog('resume refused · '+e.name));}}catch(e){}
+  // catch up at most a quarter second (a long catch-up ran up to 100 game steps and 50 audio updates in one go and choked the main thread)
+  try{if(now-last>250)last=now-250;let g=now-last;while(g>0){const s=Math.min(50,g);frameBody(last+s);g-=s;}}catch(e){}}
+function bgHide(){BG.hidden=true;dlog('→ background'+(BG.on?'':' (background play off)')+(S.killed?' (paused)':''));dsave();if(!A)return;
   if(!BG.on||S.killed){// not playing in the background: fade out and pause cleanly
     if(!S.killed){BG.autoPaused=true;setKill(true);}return;}
-  BG.wasAuto=S.auto;if(!S.auto&&!SHOP.open&&!RIDE.on)setWander(true);BG.headless=true;last=performance.now();BG.last=0;clearInterval(BG.iv);BG.iv=setInterval(bgTick,40);bgRoute(true);bgSession();}
-function bgShow(){BG.hidden=false;clearInterval(BG.iv);BG.iv=null;if(BG.headless){BG.headless=false;last=performance.now();if(!BG.wasAuto&&S.auto)setWander(false);}bgRoute(false);
-  if(BG.autoPaused){BG.autoPaused=false;if(S.killed)setKill(false);}bgSession();}
-// phones fire visibilitychange several times when you switch apps or lock; wait for it to settle so the sound isn't re-routed on every flicker
+  BG.wasAuto=S.auto;if(!S.auto&&!SHOP.open&&!RIDE.on)setWander(true);BG.headless=true;last=performance.now();BG.last=0;BG.gN=0;BG.gMax=0;clearInterval(BG.iv);BG.iv=setInterval(bgTick,40);bgSync();bgSession();}
+function bgShow(){BG.hidden=false;dlog('→ foreground · ctx '+(A?A.ctx.state:'none'));clearInterval(BG.iv);BG.iv=null;if(BG.headless){BG.headless=false;last=performance.now();if(!BG.wasAuto&&S.auto)setWander(false);}
+  if(BG.autoPaused){BG.autoPaused=false;if(S.killed)setKill(false);}if(A&&!S.killed&&A.ctx.state!=='running')A.ctx.resume().catch(()=>{});bgSession();}
+// phones fire visibilitychange several times when you switch apps or lock; wait for it to settle
 let bgVisT=0;
-document.addEventListener('visibilitychange',()=>{clearTimeout(bgVisT);bgVisT=setTimeout(()=>{try{if(document.hidden===BG.hidden)return;document.hidden?bgHide():bgShow();}catch(e){}},350);});
+document.addEventListener('visibilitychange',()=>{dlog('vis '+(document.hidden?'hidden':'visible'));clearTimeout(bgVisT);bgVisT=setTimeout(()=>{try{if(document.hidden===BG.hidden)return;document.hidden?bgHide():bgShow();}catch(e){}},350);});
+['freeze','resume'].forEach(ev=>document.addEventListener(ev,()=>dlog('page '+ev)));
+window.addEventListener('pageshow',e=>dlog('pageshow'+(e.persisted?' (restored)':'')));window.addEventListener('pagehide',()=>{dlog('pagehide');dsave();});
 function bgUI(){document.querySelectorAll('#bgRow [data-bg]').forEach(b=>b.classList.toggle('on',(b.dataset.bg==='1')===BG.on));}
 function setBg(on){BG.on=on;try{localStorage.setItem('driftBg',on?'1':'0');}catch(e){}bgUI();}
 
@@ -5160,7 +5188,7 @@ document.querySelectorAll('.knob button[data-part]').forEach(bt=>{let hold=null,
 document.getElementById('wander').addEventListener('click',()=>{ensureAudio();setWander(!S.auto);});
 const KM={w:'up',s:'down',a:'left',d:'right',W:'up',S:'down',A:'left',D:'right'};
 window.addEventListener('keyup',e=>{if(KM[e.key])held[KM[e.key]]=false;});
-window.addEventListener('pagehide',()=>{try{ageSave();fogSave();}catch(e){}});document.addEventListener('visibilitychange',()=>{if(document.hidden)try{ageSave();fogSave();}catch(e){}});
+window.addEventListener('pagehide',()=>{try{ageSave();fogSave();}catch(e){}});document.addEventListener('visibilitychange',()=>{if(document.hidden)setTimeout(()=>{if(document.hidden)try{ageSave();fogSave();}catch(e){}},700);});
 window.addEventListener('blur',()=>{for(const k in held)held[k]=false;});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'){PAUSE.open?closePause():openPause();return;}if(PAUSE.open)return;
   if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();ensureAudio();navStep(e.key==='ArrowUp'?1:-1);return;}
@@ -5252,6 +5280,9 @@ document.querySelectorAll('.wsize [data-ws]').forEach(b=>b.addEventListener('cli
 document.querySelector('#engSw .engKnob').addEventListener('click',()=>{ensureAudio();setEngine(ENGS[(ENGS.indexOf(ENG.cur)+1)%ENGS.length]);});document.querySelectorAll('#engSw [data-e]').forEach(b=>b.addEventListener('click',()=>{ensureAudio();setEngine(b.dataset.e);}));updateEngUI();
 document.getElementById('unequip').addEventListener('click',()=>{ensureAudio();unequip();});initArpUI();initPause();wearApply();document.getElementById('start').addEventListener('click',()=>{try{powerOn();}catch(e){}});
 try{initSkin();}catch(e){console.error(e);}
+document.getElementById('diagBtn').addEventListener('click',()=>{const p=document.getElementById('diagPre');diagShow(p.hidden);});
+document.getElementById('diagClr').addEventListener('click',()=>{DIAG.log=[];dsave();diagShow(true);});
+document.getElementById('diagCopy').addEventListener('click',()=>{const t='Drift v174 audio log\n'+navigator.userAgent+'\n'+DIAG.log.join('\n');const ok=()=>toast('LOG COPIED'),no=()=>{diagShow(true);const r=document.createRange();r.selectNodeContents(document.getElementById('diagPre'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('LOG SELECTED · COPY IT');};try{navigator.clipboard.writeText(t).then(ok,no);}catch(e){no();}});
 document.getElementById('devWhale').addEventListener('click',()=>{ensureAudio();devWhale(false);});document.getElementById('devBlue').addEventListener('click',()=>{ensureAudio();devWhale(true);});
 document.getElementById('devQuake').addEventListener('click',()=>{ensureAudio();if(!DIS.cur)startQuake();});
 document.getElementById('octDn').addEventListener('click',()=>{ensureAudio();octStep(-1);});
