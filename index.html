@@ -521,6 +521,24 @@ html body.imm #imm .arpBox .tog.on i{top:8px;}
 html body.imm #imm .arpBox .tog b{left:50%;top:17px;width:12px;height:3px;margin-left:-6px;}
 html body.imm #imm .arpBox .tog.on b{top:19px;}
 .arpBox .arpMode{border-radius:0!important;clip-path:polygon(0 2px,2px 2px,2px 0,calc(100% - 2px) 0,calc(100% - 2px) 2px,100% 2px,100% calc(100% - 2px),calc(100% - 2px) calc(100% - 2px),calc(100% - 2px) 100%,2px 100%,2px calc(100% - 2px),0 calc(100% - 2px));box-shadow:inset 0 -3px 0 var(--cp-capsh),inset 0 2px 0 rgba(255,255,255,.55)!important;font-family:DriftPix,monospace!important;font-weight:400!important;font-size:15px!important;letter-spacing:0!important;-webkit-font-smoothing:none;padding:5px 3px 7px!important;width:auto!important;min-width:48px;white-space:nowrap;overflow:visible;}
+/* ---- v180: full screen landscape — voice (left) and master (right) faders lie sideways, stacked down the column ---- */
+html body.imm #imm :is(#immL #vF,#immR #mF,#immL #arpF){display:flex!important;flex-direction:column;gap:2px;width:100%;}
+html body.imm #imm :is(#immL #vF,#immR #mF,#immL #arpF) .fd{flex-direction:row;align-items:center;gap:5px;width:100%;}
+html body.imm #imm :is(#immL #vF,#immR #mF,#immL #arpF) .fd b{flex:0 0 44px;text-align:left;font-size:9px!important;letter-spacing:.02em!important;overflow:hidden;}
+html body.imm #imm :is(#immL #vF,#immR #mF,#immL #arpF) .fd .ft{flex:1 1 auto;width:auto!important;height:16px!important;cursor:ew-resize;background:linear-gradient(var(--cp-line),var(--cp-line)) 0 0/1px 100% no-repeat,linear-gradient(var(--cp-line),var(--cp-line)) 50% 0/1px 100% no-repeat,linear-gradient(var(--cp-line),var(--cp-line)) 100% 0/1px 100% no-repeat;}
+html body.imm #imm :is(#immL #vF,#immR #mF,#immL #arpF) .fd .ft::before{left:0;right:0;top:6px;bottom:auto;width:auto;height:4px;}
+html body.imm #imm :is(#immL #vF,#immR #mF,#immL #arpF) .fd .ft::after{inset:-4px -6px;}
+html body.imm #imm :is(#immL #vF,#immR #mF,#immL #arpF) .fd :is(.fc,.fg){top:1px!important;width:12px!important;height:14px!important;}
+html body.imm #imm :is(#immL #vF,#immR #mF,#immL #arpF) .fd .fc::after{left:5px;right:auto;top:3px;bottom:3px;width:1px;height:auto;}
+html body.imm #imm :is(#immL #vF,#immR #mF,#immL #arpF) .fd .fg{transition:left .3s linear;}
+html body.imm #imm :is(#immL #vF,#immR #mF,#immL #arpF) .fd .lm{left:0;right:0;top:auto;bottom:-3px;width:auto;height:2px;}
+html body.imm #imm :is(#immL #vF,#immR #mF,#immL #arpF) .fd .lm i{background:linear-gradient(90deg,#38e060 0 62%,#ffb020 62% 86%,#ff3a1a 86%);clip-path:inset(0 calc((1 - var(--lm,0))*100%) 0 0);}
+html body.imm #imm :is(#immL #vF,#immR #mF,#immL #arpF) .fd s{flex:0 0 30px;text-align:right;min-height:0;font-size:12px!important;}
+html body.imm #imm #immL .arpL{justify-content:flex-start;}
+
+html body.imm #imm #immL .arpBox{flex:1 1 auto;max-width:none;min-width:0;width:auto;flex-wrap:wrap;align-items:center;row-gap:4px;}
+html body.imm #imm #immL .arpBody{display:contents;}
+html body.imm #imm #immL .arpBox #arpF{display:flex!important;flex:0 0 100%;width:100%;}
 </style>
 
 </head>
@@ -1843,12 +1861,12 @@ setTimeout(schedFit,0);setTimeout(schedFit,400);
 const isPortrait=()=>window.innerHeight>window.innerWidth*.95;
 function browserFS(){const de=document.documentElement,fs=document.fullscreenElement||document.webkitFullscreenElement;try{if(fs){(document.exitFullscreen||document.webkitExitFullscreen).call(document);}else{const rq=de.requestFullscreen||de.webkitRequestFullscreen;if(rq){const pr=rq.call(de,{navigationUI:'hide'});if(pr&&pr.catch)pr.catch(()=>{});}else toast('IPHONE: SHARE · ADD TO HOME SCREEN FOR FULL SCREEN');}}catch(e){}}
 function immMove(el,to){if(!el)return;IMM.moved.push([el,el.parentNode,el.nextSibling]);to.appendChild(el);}
-function enterImm(auto){if(IMM.on)return;setTimeout(()=>{try{CON.p=null;document.getElementById('mF')._spec=null;}catch(e){}},50);if(auto!==true)ensureAudio();IMM.on=true;view.style.width='';view.style.height='';IMM.fit=null;svWrap();document.body.classList.add('imm');const $=id=>document.getElementById(id);
+function enterImm(auto){if(IMM.on)return;setTimeout(()=>{try{CON.p=null;document.getElementById('mF')._spec=null;const af=document.getElementById('arpF');if(af&&af._spec)buildFaders(af,af._spec);}catch(e){}},50);if(auto!==true)ensureAudio();IMM.on=true;view.style.width='';view.style.height='';IMM.fit=null;svWrap();document.body.classList.add('imm');const $=id=>document.getElementById(id);
   immMove($('cpParts'),$('immParts'));immMove($('cpVoice'),$('immVoice'));immMove(document.querySelector('.dpad'),$('immDpad'));immMove(document.querySelector('.cpRow'),$('immMaster'));immMove(document.querySelector('.pills'),$('immSmall'));immMove($('tpad'),$('immStick'));
   IMM.fit=null;setView(true);fitImm();setTimeout(()=>{window.dispatchEvent(new Event('resize'));IMM.fit=null;setView(true);fitImm();},60);
   if(IOS&&!STANDALONE&&!IMM.hinted){IMM.hinted=1;setTimeout(()=>toast('IPHONE: SHARE · ADD TO HOME SCREEN FOR TRUE FULL SCREEN'),900);}
   try{const de=document.documentElement,rq=de.requestFullscreen||de.webkitRequestFullscreen;if(rq){const pr=rq.call(de,{navigationUI:'hide'});if(pr&&pr.then)pr.then(()=>{try{screen.orientation.lock('landscape').catch(()=>{});}catch(e){}}).catch(()=>{});}}catch(e){}}
-function exitImm(keepFS){if(!IMM.on)return;setTimeout(()=>{try{CON.p=null;document.getElementById('mF')._spec=null;}catch(e){}},50);IMM.on=false;document.body.classList.remove('imm');for(let i=IMM.moved.length-1;i>=0;i--){const [el,par,nx]=IMM.moved[i];par.insertBefore(el,nx&&nx.parentNode===par?nx:null);}IMM.moved=[];
+function exitImm(keepFS){if(!IMM.on)return;setTimeout(()=>{try{CON.p=null;document.getElementById('mF')._spec=null;const af=document.getElementById('arpF');if(af&&af._spec)buildFaders(af,af._spec);}catch(e){}},50);IMM.on=false;document.body.classList.remove('imm');for(let i=IMM.moved.length-1;i>=0;i--){const [el,par,nx]=IMM.moved[i];par.insertBefore(el,nx&&nx.parentNode===par?nx:null);}IMM.moved=[];
   setView(false);setTimeout(()=>{window.dispatchEvent(new Event('resize'));setView(false);schedFit();},60);setTimeout(schedFit,300);if(keepFS!==true){try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else if(document.webkitFullscreenElement)document.webkitExitFullscreen();}catch(e){}}}
 document.addEventListener('fullscreenchange',()=>{const f=!!document.fullscreenElement;if(!f&&IMM.fsWas&&IMM.on)exitImm();IMM.fsWas=f;});
 window.addEventListener('resize',()=>{if(IMM.on)setTimeout(()=>resize(),30);});
@@ -2319,20 +2337,22 @@ function voiceSpec0(p){
 // ghost on the master faders: where the automation is actually taking SPACE, ECHO, DRIFT and DRIVE right now (your fader plus the drift around it)
 const MLIVE={space:()=>clamp(MAN.m.space+(S.eff.space-S.base.space)),echo:()=>clamp(MAN.m.echo+(S.eff.echo-S.base.echo)),drift:()=>clamp(MAN.m.drift+(S.eff.drift-S.base.drift)),drive:()=>clamp(MAN.m.drive+(tapeAmt()-.04)*.8)};
 const MSPEC=[['SPACE','space',.5],['ECHO','echo',.5],['DRIFT','drift',.25],['DRIVE','drive',.2],['SAT','sat',0]].map(([l,k,d])=>({l,live:MLIVE[k],get:()=>MAN.m[k],set:v=>{MAN.m[k]=v;manSave();},show:()=>f10(MAN.m[k]),def:d}));
-function buildFaders(el,spec){el.innerHTML='';el._spec=spec;spec.forEach((f,i)=>{const d=document.createElement('div');d.className='fd';d.innerHTML=`<b>${f.sl?`<span class="lfl">${f.l}</span><span class="lsh">${f.sl}</span>`:f.l}</b><div class="ft">${f.live?'<i class="fg"></i>':''}${f.meter?'<span class="lm"><i></i></span>':''}<i class="fc${f.red?' red':''}${f.lv?' lv':''}"></i></div><s></s>`;el.appendChild(d);f.el=d;f.tp=null;f.gt=null;f.ch=0;
-  const tr=d.querySelector('.ft');let y0=0,v0=0,acc=0;
-  tr.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();tr.setPointerCapture(e.pointerId);d.classList.add('drag');y0=e.clientY;tr._py=e.clientY;tr._ly=e.clientY;tr._xd=e.clientX;tr._snap=0;
-    {const nw=performance.now();if(f.def!=null&&nw-(tr._dt||0)<320&&Math.abs(e.clientY-(tr._dy||0))<24){tr._dt=0;f.set(f.def);acc=f.def;v0=acc;paintF(f);try{navigator.vibrate&&navigator.vibrate(10);}catch(e2){}return;}tr._dt=nw;tr._dy=e.clientY;}
+function buildFaders(el,spec){el.innerHTML='';el._spec=spec;spec.forEach((f,i)=>{const d=document.createElement('div');d.className='fd';d.innerHTML=`<b>${f.sl?`<span class="lfl">${f.l}</span><span class="lsh">${f.sl}</span>`:f.l}</b><div class="ft">${f.live?'<i class="fg"></i>':''}${f.meter?'<span class="lm"><i></i></span>':''}<i class="fc${f.red?' red':''}${f.lv?' lv':''}"></i></div><s></s>`;el.appendChild(d);f.el=d;f.tp=null;f.gt=null;f.ch=0;f.hz=document.body.classList.contains('imm')&&(el.id==='vF'||el.id==='mF'||el.id==='arpF');
+  const tr=d.querySelector('.ft');let y0=0,v0=0,acc=0;const P=e=>f.hz?e.clientX:-e.clientY,Q=e=>f.hz?e.clientY:e.clientX;
+  tr.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();tr.setPointerCapture(e.pointerId);d.classList.add('drag');y0=P(e);tr._py=P(e);tr._ly=P(e);tr._xd=Q(e);tr._snap=0;
+    {const nw=performance.now();if(f.def!=null&&nw-(tr._dt||0)<320&&Math.abs(P(e)-(tr._dy||0))<24){tr._dt=0;f.set(f.def);acc=f.def;v0=acc;paintF(f);try{navigator.vibrate&&navigator.vibrate(10);}catch(e2){}return;}tr._dt=nw;tr._dy=P(e);}
     const r=tr.getBoundingClientRect();acc=f.n?f.get():f.get();
     // tapping on the track (not near the cap) jumps there
-    const at=clamp(1-(e.clientY-r.top)/r.height),cur=f.get();if(Math.abs(at-cur)>.18){acc=at;f.set(at);}v0=acc;});
-  tr.addEventListener('pointermove',e=>{if(!d.classList.contains('drag'))return;const r=tr.getBoundingClientRect();const sp=Math.abs(e.clientY-(tr._ly??e.clientY));tr._ly=e.clientY;const prev=acc;const dy=e.clientY-(tr._py??e.clientY);tr._py=e.clientY;const fine=Math.abs(e.clientX-(tr._xd??e.clientX))>56?.25:1;acc=clamp(acc-dy/Math.max(r.height-(f.ch||15),36)*fine);
+    const at=clamp(f.hz?(e.clientX-r.left)/r.width:1-(e.clientY-r.top)/r.height),cur=f.get();if(Math.abs(at-cur)>.18){acc=at;f.set(at);}v0=acc;});
+  tr.addEventListener('pointermove',e=>{if(!d.classList.contains('drag'))return;const r=tr.getBoundingClientRect();const p=P(e),sp=Math.abs(p-(tr._ly??p));tr._ly=p;const prev=acc;const dp=p-(tr._py??p);tr._py=p;const fine=Math.abs(Q(e)-(tr._xd??Q(e)))>56?.25:1;acc=clamp(acc+dp/Math.max((f.hz?r.width:r.height)-(f.ch||15),36)*fine);
     let out=acc;if(f.def!=null&&!f.n&&Math.abs(acc-f.def)<.025){out=f.def;if(!tr._snap){tr._snap=1;try{navigator.vibrate&&navigator.vibrate(6);}catch(e2){}}}else tr._snap=0;
     if(e.isTrusted&&tr.hasPointerCapture&&tr.hasPointerCapture(e.pointerId)&&Math.abs(acc-prev)>.002)uiFader(tr,sp/14);f.set(out);if(f.n)f.vis=out;paintF(f);});
   const up=e=>{d.classList.remove('drag');f.vis=null;paintF(f);};tr.addEventListener('pointerup',up);tr.addEventListener('pointercancel',up);
   tr.addEventListener('dblclick',()=>{if(f.def!=null){f.set(f.def);paintF(f);}});
   paintF(f);});}
-function paintF(f){if(!f.el)return;const c=f.el.querySelector('.fc'),v=clamp(f.vis!=null?f.vis:f.get());const tp=`calc(${((1-v)*100).toFixed(1)}% - ${((1-v)*(f.ch||(f.ch=c.offsetHeight||15))).toFixed(1)}px)`;if(f.tp!==tp){f.tp=tp;c.style.top=tp;}if(f.live){const gv=clamp(f.live()),gt=`calc(${((1-gv)*100).toFixed(1)}% - ${((1-gv)*f.ch).toFixed(1)}px)`;if(f.gt!==gt){f.gt=gt;f.el.querySelector('.fg').style.top=gt;}}const s=f.el.querySelector('s'),t=f.show();if(s.textContent!==t)s.textContent=t;}
+function paintF(f){if(!f.el)return;const c=f.el.querySelector('.fc'),v=clamp(f.vis!=null?f.vis:f.get());
+  if(f.hz){const cw=f.ch||(f.ch=c.offsetWidth||12),lp=`calc(${(v*100).toFixed(1)}% - ${(v*cw).toFixed(1)}px)`;if(f.tp!==lp){f.tp=lp;c.style.left=lp;}if(f.live){const gv=clamp(f.live()),gl=`calc(${(gv*100).toFixed(1)}% - ${(gv*cw).toFixed(1)}px)`;if(f.gt!==gl){f.gt=gl;f.el.querySelector('.fg').style.left=gl;}}const s=f.el.querySelector('s'),t=f.show();if(s.textContent!==t)s.textContent=t;return;}
+  const tp=`calc(${((1-v)*100).toFixed(1)}% - ${((1-v)*(f.ch||(f.ch=c.offsetHeight||15))).toFixed(1)}px)`;if(f.tp!==tp){f.tp=tp;c.style.top=tp;}if(f.live){const gv=clamp(f.live()),gt=`calc(${((1-gv)*100).toFixed(1)}% - ${((1-gv)*f.ch).toFixed(1)}px)`;if(f.gt!==gt){f.gt=gt;f.el.querySelector('.fg').style.top=gt;}}const s=f.el.querySelector('s'),t=f.show();if(s.textContent!==t)s.textContent=t;}
 let CON={p:null};
 function consoleTick(){if(document.hidden||(typeof TV!=='undefined'&&TV.on))return;const vF=document.getElementById('vF'),mF=document.getElementById('mF');if(!vF||!mF)return;
   const p=S.focus||'global';
@@ -5277,7 +5297,7 @@ try{initSkin();}catch(e){console.error(e);}
 document.querySelectorAll('#bgModeRow [data-bgm]').forEach(b=>{if(b.dataset.bgm==='buffer'&&!bufOK())b.hidden=true;b.addEventListener('click',()=>{ensureAudio();setBgMode(b.dataset.bgm);});});
 document.getElementById('diagBtn').addEventListener('click',()=>{const p=document.getElementById('diagPre');diagShow(p.hidden);});
 document.getElementById('diagClr').addEventListener('click',()=>{DIAG.log=[];dsave();diagShow(true);});
-document.getElementById('diagCopy').addEventListener('click',()=>{const t='Drift v179 audio log\n'+navigator.userAgent+'\n'+DIAG.log.join('\n');const ok=()=>toast('LOG COPIED'),no=()=>{diagShow(true);const r=document.createRange();r.selectNodeContents(document.getElementById('diagPre'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('LOG SELECTED · COPY IT');};try{navigator.clipboard.writeText(t).then(ok,no);}catch(e){no();}});
+document.getElementById('diagCopy').addEventListener('click',()=>{const t='Drift v180 audio log\n'+navigator.userAgent+'\n'+DIAG.log.join('\n');const ok=()=>toast('LOG COPIED'),no=()=>{diagShow(true);const r=document.createRange();r.selectNodeContents(document.getElementById('diagPre'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('LOG SELECTED · COPY IT');};try{navigator.clipboard.writeText(t).then(ok,no);}catch(e){no();}});
 document.getElementById('devWhale').addEventListener('click',()=>{ensureAudio();devWhale(false);});document.getElementById('devBlue').addEventListener('click',()=>{ensureAudio();devWhale(true);});
 document.getElementById('devQuake').addEventListener('click',()=>{ensureAudio();if(!DIS.cur)startQuake();});
 document.getElementById('octDn').addEventListener('click',()=>{ensureAudio();octStep(-1);});
