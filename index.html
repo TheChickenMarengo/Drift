@@ -897,7 +897,7 @@ function initAudio(){
   const crush=[3,6,12].map(st=>{const ws=ctx.createWaveShaper();ws.curve=crushCurve(st);ws.connect(evBus);return ws;});
   // AIR
   const airBus=g(0),airF=bq('lowpass',5000,.8);airBus.connect(airF);airF.connect(dry);
-  const bassBus=g(0),bassLP=bq('lowpass',900,.8),bassPre=g(1),bassWS=ctx.createWaveShaper(),bassPost=g(1),bassRev=g(.1);bassWS.curve=tanhCurve(1);bassWS.oversample='none';bassBus.connect(bassLP);bassLP.connect(bassPre);bassPre.connect(bassWS);bassWS.connect(bassPost);bassPost.connect(dry);bassPost.connect(bassRev);bassRev.connect(revIn);const airWide=g(0),awL=ctx.createStereoPanner(),awR=ctx.createStereoPanner(),awD=ctx.createDelay(.05);awL.pan.value=-1;awR.pan.value=1;awD.delayTime.value=.013;airF.connect(airWide);airWide.connect(awL);awL.connect(dry);airWide.connect(awD);awD.connect(awR);awR.connect(dry);const airRev=g(.6);airF.connect(airRev);airRev.connect(revIn);
+  const bassBus=g(0),bassLP=bq('lowpass',900,.8),bassPre=g(1),bassWS=ctx.createWaveShaper(),bassPost=g(1),bassRev=g(.1);bassWS.curve=tanhCurve(1);bassWS.oversample='none';bassBus.connect(bassLP);bassLP.connect(bassPre);bassPre.connect(bassWS);bassWS.connect(bassPost);bassPost.connect(dry);bassPost.connect(bassRev);bassRev.connect(revIn);const bassDel=g(0);bassPost.connect(bassDel);bassDel.connect(delIn);const airWide=g(0),awL=ctx.createStereoPanner(),awR=ctx.createStereoPanner(),awD=ctx.createDelay(.05);awL.pan.value=-1;awR.pan.value=1;awD.delayTime.value=.013;airF.connect(airWide);airWide.connect(awL);awL.connect(dry);airWide.connect(awD);awD.connect(awR);awR.connect(dry);const airRev=g(.6);airF.connect(airRev);airRev.connect(revIn);
   const nz=src(nzBuf),nzBP=bq('bandpass',700,.55),windG=g(0);nz.connect(nzBP);nzBP.connect(windG);windG.connect(airBus);
   const lfo3=osc('sine',.07),lfo3G=g(450);lfo3.connect(lfo3G);lfo3G.connect(nzBP.frequency);lfo3.start();nz.start();
   const wv=src(nzBuf),wvLP=bq('lowpass',520,.5),wvG=g(0),wvAm=g(.5),wvL=osc('sine',.085),wvLG=g(.5);wv.connect(wvLP);wvLP.connect(wvAm);wvL.connect(wvLG);wvLG.connect(wvAm.gain);wvAm.connect(wvG);wvG.connect(airBus);wv.start();wvL.start();
@@ -906,7 +906,7 @@ function initAudio(){
   const rubble=clickBuf(ctx,1.2,.01,70);
   // shō + rain
   const rainBuf=clickBuf(ctx,4.3,.004,60);
-  A={ctx,msDry,msPre,msWet,msBump,msLP,master,outG,bassBus,bassLP,bassPre,bassPost,bassRev,evBus,evRev,keysRev,ambDry,ambDel,kPost,kDel,tapeD,humMk,actLP,actG,grainBus,humDuck,padPump,keysF,airF,ffH,ffP,ffT0,rainBuf,src,layers:{},tapePre,tapePost,padDry,padWet,ana,anaL,anaR,dry,revIn,revOut,delIn,dL,dR,fbA,fbB,lpA,lpB,satPre,satPost,dmodG,dwbG,padF,padBus,padDel,padRev,lfo1G,lfo1,lfo2,lfo2G,lfo2I,bloomBus,
+  A={ctx,msDry,msPre,msWet,msBump,msLP,master,outG,bassBus,bassLP,bassPre,bassPost,bassRev,bassDel,evBus,evRev,keysRev,ambDry,ambDel,kPost,kDel,tapeD,humMk,actLP,actG,grainBus,humDuck,padPump,keysF,airF,ffH,ffP,ffT0,rainBuf,src,layers:{},tapePre,tapePost,padDry,padWet,ana,anaL,anaR,dry,revIn,revOut,delIn,dL,dR,fbA,fbB,lpA,lpB,satPre,satPost,dmodG,dwbG,padF,padBus,padDel,padRev,lfo1G,lfo1,lfo2,lfo2G,lfo2I,bloomBus,
      humBus,humF,humO,humSub,humSubG,airWide,humBody,humBodyLv,humBodyF,humFLG,humW,humWI,humLfo,noteBus,noteDel,keysBus,keysEcho,chIn,crush,airBus,windG,nzBP,wvG,crG,bkG,bkBP,rubble,wowG,flG,flG2,wbG,wbAmp,hsG,tapeLP,tapeOut,nzBuf,
      g,bq,osc,pan,padVoices:[],voices:0};
   setChord();setHum();setHumTimbre();
@@ -1113,7 +1113,7 @@ function applyAudio2(){const t=A.ctx.currentTime,e=S.eff,fx=S.fxAmt,on=S.on,ex=e
   A.keysBus.gain.setTargetAtTime(PF.c.keys*AK.keys*(.9+.25*MV.v)*LV('keys'),t,.2);A.keysEcho.gain.setTargetAtTime(.25*clamp((S.keys.echo??.4)+GM('depth')*.8)/.4,t,.3);A.keysF.frequency.setTargetAtTime(clamp(3000*Math.pow(2,((S.keys.tone??.5)-.5)*2.4)*Math.pow(2,MV.v*2.1+S.fOff.keys*3.2)*(1-.25*WXM.fog),180,16000),t,.25);A.airF.frequency.setTargetAtTime(clamp(1900*Math.pow(2,MV.v*1.2)*(1-.35*WXM.fog),150,16000),t,.25);
   ex.kp.pan.setTargetAtTime(clamp(MV.lean*.35,-.4,.4),t,.4);ex.ap.pan.setTargetAtTime(clamp(-MV.lean*.25,-.3,.3),t,.4);ex.tl.frequency.setTargetAtTime(BMOD.trR,t,1.5);ex.tpG.gain.setTargetAtTime(BMOD.tr*(S.club>.3?0:1),t,1);ex.taG.gain.setTargetAtTime(BMOD.ta,t,1);ex.sh.gain.setTargetAtTime(3.5*WXM.clear-4*WXM.fog+2*W.fm+1*W.gran,t,1.5);
   const a=S.air,mixes=[[1,.1,.15,0],[.2,1,0,.1],[.15,.1,1,0],[.2,.2,.1,1],[0,0,.04,0]][a.type];
-  if(A.airWide)A.airWide.gain.setTargetAtTime(clamp((S.air.width??.3)+GM('spread')*1.2)*.55,t,.4);if(A.humSubG)A.humSubG.gain.setTargetAtTime(1.6*clamp((S.hum.sub??.47)+GM('depth')*1.1),t,.4);A.airBus.gain.setTargetAtTime(a.level*.4*(.85+.3*MV.v)*AMB(),t,.25);A.bassBus.gain.setTargetAtTime(PF.c.air*AK.air*RIDE.mx.air*LV('air')*(1-clamp((S.club||0)*1.2)),t,.25);A.bassLP.frequency.setTargetAtTime(clamp(900*Math.pow(2,PRC.tone*4+(S.fOff.air||0)*2.5),200,16000),t,.2);A.bassPre.gain.setTargetAtTime(1,t,.2);A.bassPost.gain.setTargetAtTime(1.1,t,.2);if(A.bassRev)A.bassRev.gain.setTargetAtTime(.04+PRC.room*.55,t,.3);const atc=(S.air.quick||0)>clock?.45:2.6;A.windG.gain.setTargetAtTime(.09*mixes[0],t,atc);A.wvG.gain.setTargetAtTime(.22*mixes[1],t,atc);
+  if(A.airWide)A.airWide.gain.setTargetAtTime(clamp((S.air.width??.3)+GM('spread')*1.2)*.55,t,.4);if(A.humSubG)A.humSubG.gain.setTargetAtTime(1.6*clamp((S.hum.sub??.47)+GM('depth')*1.1),t,.4);A.airBus.gain.setTargetAtTime(a.level*.4*(.85+.3*MV.v)*AMB(),t,.25);A.bassBus.gain.setTargetAtTime(PF.c.air*AK.air*RIDE.mx.air*LV('air')*(1-clamp((S.club||0)*1.2)),t,.25);A.bassLP.frequency.setTargetAtTime(clamp(900*Math.pow(2,PRC.tone*4+(S.fOff.air||0)*2.5),200,16000),t,.2);A.bassPre.gain.setTargetAtTime(1,t,.2);A.bassPost.gain.setTargetAtTime(1.1,t,.2);if(A.bassRev)A.bassRev.gain.setTargetAtTime(.04+PRC.room*.55,t,.3);if(A.bassDel)A.bassDel.gain.setTargetAtTime(PRC.del*PRC.del*.9,t,.3);const atc=(S.air.quick||0)>clock?.45:2.6;A.windG.gain.setTargetAtTime(.09*mixes[0],t,atc);A.wvG.gain.setTargetAtTime(.22*mixes[1],t,atc);
   A.crG.gain.setTargetAtTime(.12*mixes[2]+S.mossCr*.08,t,atc);A.bkG.gain.setTargetAtTime(.5*mixes[3],t,atc);
   A.nzBP.frequency.setTargetAtTime(300+a.color*2200,t,.6);A.bkBP.frequency.setTargetAtTime(500+a.color*1400,t,.6);
   A.revOut.gain.setTargetAtTime((.1+e.space*1.05+WXM.fog*.35+AK.space+RIDE.mx.space+.15*W.gran)*Math.pow(2,(MAN.m.space-.5)*2),t,.5);A.dry.gain.setTargetAtTime(.95-e.space*.45-WXM.fog*.12,t,.5);
@@ -2356,7 +2356,7 @@ function paintF(f){if(!f.el)return;const c=f.el.querySelector('.fc'),v=clamp(f.v
 let CON={p:null};
 function consoleTick(){if(document.hidden||(typeof TV!=='undefined'&&TV.on))return;const vF=document.getElementById('vF'),mF=document.getElementById('mF');if(!vF||!mF)return;
   const p=S.focus||'global';
-  if(CON.p!==p){CON.p=p;vF.classList.toggle('six',p==='global');buildFaders(vF,voiceSpec(p));document.getElementById('vTitle').textContent=p==='global'?'global · all parts':(p==='air'?'perc · voice':p+' · voice');}
+  if(CON.p!==p){CON.p=p;{const vs=voiceSpec(p);vF.classList.toggle('six',vs.length>5);buildFaders(vF,vs);}document.getElementById('vTitle').textContent=p==='global'?'global · all parts':(p==='air'?'perc · voice':p+' · voice');}
   if(!mF._spec)buildFaders(mF,MSPEC);
   const vi=document.getElementById('vInst'),nm=p==='global'?'macros':S.on[p]?(setName(p)||'').toLowerCase()+(p==='pad'?' · '+chordInfo().text:''):'off';if(vi.textContent!==nm)vi.textContent=nm;
   document.getElementById('cpVoice').classList.toggle('partoff',p!=='global'&&!S.on[p]);
@@ -3684,10 +3684,10 @@ function bioBass(){return (typeof AGE!=='undefined'&&AGE.i!=null)?Math.min(4,AGE
    Soft synthesised percussion in loose 16-step patterns on the arp's timing. Each kit gives four roles a voice:
    anchor (a low drum on the downbeat), back (the answer), tick (shaker/clicks) and colour (bells, glass, metal, drips).
    Patterns mutate a little at each chord change; DENSITY and your movement decide how much plays; FEEL loosens the timing. */
-const PRC={dens:.45,tone:.5,room:.35,feel:.4,next:0,step:0,pat:null,kit:-1,ck:''};
-try{const o=JSON.parse(localStorage.getItem('driftPerc')||'null');if(o)for(const k of ['dens','tone','room','feel'])if(typeof o[k]==='number')PRC[k]=o[k];}catch(e){}
-function percSave(){try{localStorage.setItem('driftPerc',JSON.stringify({dens:PRC.dens,tone:PRC.tone,room:PRC.room,feel:PRC.feel}));}catch(e){}}
-function percSpec(){const f=(l,k,d,red)=>({l,red,get:()=>PRC[k],set:v=>{PRC[k]=v;percSave();},show:()=>f10(PRC[k]),def:d});return [f('DENSITY','dens',.45),f('TONE','tone',.5,true),f('ROOM','room',.35),f('FEEL','feel',.4)];}
+const PRC={dens:.45,tone:.5,room:.35,del:.2,feel:.4,next:0,step:0,pat:null,kit:-1,ck:''};
+try{const o=JSON.parse(localStorage.getItem('driftPerc')||'null');if(o)for(const k of ['dens','tone','room','del','feel'])if(typeof o[k]==='number')PRC[k]=o[k];}catch(e){}
+function percSave(){try{localStorage.setItem('driftPerc',JSON.stringify({dens:PRC.dens,tone:PRC.tone,room:PRC.room,del:PRC.del,feel:PRC.feel}));}catch(e){}}
+function percSpec(){const f=(l,k,d,red)=>({l,red,get:()=>PRC[k],set:v=>{PRC[k]=v;percSave();},show:()=>f10(PRC[k]),def:d});return [f('DENSITY','dens',.45),f('TONE','tone',.5,true),f('ROOM','room',.35),f('DELAY','del',.2),f('FEEL','feel',.4)];}
 // kit = voices for [anchor, back, tick, colour]
 const PKITS=[['skinLow','click','seed','bone'],['frameLow','tak','shaker','wood'],['taborLow','tabor','shaker','bell'],['thud','clank','hiss','anvil'],['thud','crumble','click','glass'],['plonk','tap','drip','drip'],['thump','thump2',null,null]];
 // where each role likes to land (probability per 16th step)
@@ -4351,7 +4351,7 @@ const CP=[// [id, get, set, lo, hi, glide seconds]
   ['pad.wash',()=>S.pad.wash??.5,v=>S.pad.wash=v,.4,.88,14],['pad.filt',()=>MAN.v.pad.filt,v=>MAN.v.pad.filt=v,.28,.72,10],['pad.voicing',()=>MAN.v.pad.voicing,v=>MAN.v.pad.voicing=v,.3,.72,16],['pad.motion',()=>MAN.v.pad.motion,v=>MAN.v.pad.motion=v,.3,.78,14],
   ['keys.tone',()=>S.keys.tone??.5,v=>S.keys.tone=v,.28,.72,10],['keys.echo',()=>S.keys.echo??.4,v=>S.keys.echo=v,.22,.72,12],['keys.len',()=>S.keys.len??.5,v=>S.keys.len=v,.32,.85,14],
   ['arp.rate',()=>ARPC.rate,v=>ARPC.rate=v,.28,.68,10],['tempo',()=>ARPC.tempo??.25,v=>ARPC.tempo=v,.12,.45,40],
-  ['perc.dens',()=>PRC.dens,v=>PRC.dens=v,.2,.72,16],['perc.tone',()=>PRC.tone,v=>PRC.tone=v,.3,.75,12],['perc.room',()=>PRC.room,v=>PRC.room=v,.15,.6,16],['perc.feel',()=>PRC.feel,v=>PRC.feel=v,.2,.7,20],
+  ['perc.dens',()=>PRC.dens,v=>PRC.dens=v,.2,.72,16],['perc.tone',()=>PRC.tone,v=>PRC.tone=v,.3,.75,12],['perc.room',()=>PRC.room,v=>PRC.room=v,.15,.6,16],['perc.del',()=>PRC.del,v=>PRC.del=v,.05,.5,16],['perc.feel',()=>PRC.feel,v=>PRC.feel=v,.2,.7,20],
   ['lv.hum',()=>MAN.lv.hum,v=>MAN.lv.hum=v,-.1,.1,22],['lv.pad',()=>MAN.lv.pad,v=>MAN.lv.pad=v,-.1,.1,22],['lv.keys',()=>MAN.lv.keys,v=>MAN.lv.keys=v,-.12,.08,22],['lv.air',()=>MAN.lv.air,v=>MAN.lv.air=v,-.12,.06,22]];
 // levels are offsets from your own level (lo/hi above), everything else is absolute
 const isLv=id=>id.startsWith('lv.');
@@ -5297,7 +5297,7 @@ try{initSkin();}catch(e){console.error(e);}
 document.querySelectorAll('#bgModeRow [data-bgm]').forEach(b=>{if(b.dataset.bgm==='buffer'&&!bufOK())b.hidden=true;b.addEventListener('click',()=>{ensureAudio();setBgMode(b.dataset.bgm);});});
 document.getElementById('diagBtn').addEventListener('click',()=>{const p=document.getElementById('diagPre');diagShow(p.hidden);});
 document.getElementById('diagClr').addEventListener('click',()=>{DIAG.log=[];dsave();diagShow(true);});
-document.getElementById('diagCopy').addEventListener('click',()=>{const t='Drift v180 audio log\n'+navigator.userAgent+'\n'+DIAG.log.join('\n');const ok=()=>toast('LOG COPIED'),no=()=>{diagShow(true);const r=document.createRange();r.selectNodeContents(document.getElementById('diagPre'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('LOG SELECTED · COPY IT');};try{navigator.clipboard.writeText(t).then(ok,no);}catch(e){no();}});
+document.getElementById('diagCopy').addEventListener('click',()=>{const t='Drift v181 audio log\n'+navigator.userAgent+'\n'+DIAG.log.join('\n');const ok=()=>toast('LOG COPIED'),no=()=>{diagShow(true);const r=document.createRange();r.selectNodeContents(document.getElementById('diagPre'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('LOG SELECTED · COPY IT');};try{navigator.clipboard.writeText(t).then(ok,no);}catch(e){no();}});
 document.getElementById('devWhale').addEventListener('click',()=>{ensureAudio();devWhale(false);});document.getElementById('devBlue').addEventListener('click',()=>{ensureAudio();devWhale(true);});
 document.getElementById('devQuake').addEventListener('click',()=>{ensureAudio();if(!DIS.cur)startQuake();});
 document.getElementById('octDn').addEventListener('click',()=>{ensureAudio();octStep(-1);});
