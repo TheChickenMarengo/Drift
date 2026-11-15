@@ -5151,7 +5151,7 @@ function bufAhead(){try{const b=BG.sb&&BG.sb.buffered;return b&&b.length?b.end(b
 function bufEdge(tgt){try{const b=BG.sb&&BG.sb.buffered;if(!b||!b.length)return;const end=b.end(b.length-1);if(end-BG.el.currentTime>tgt+.6||end-BG.el.currentTime<tgt*.5)BG.el.currentTime=Math.max(b.start(b.length-1),end-tgt);}catch(e){}}
 // set up once, inside a tap (browsers only let media start from a gesture)
 function bgPrep(){if(!A||BG.el)return;if(!BG.on){bgSession();bgWatch();return;}
-  if(!BG.ctxLog){BG.ctxLog=1;try{const c=A.ctx;dlog('audio start · '+c.sampleRate+' Hz · base '+Math.round((c.baseLatency||0)*1000)+' ms · out '+Math.round((c.outputLatency||0)*1000)+' ms · '+(MOBILE?'mobile':'desktop')+' · '+(matchMedia('(display-mode: standalone)').matches?'app':'tab'));
+  if(!BG.ctxLog){BG.ctxLog=1;try{const c=A.ctx;dlog('audio start · '+c.sampleRate+' Hz · base '+Math.round((c.baseLatency||0)*1000)+' ms · out '+Math.round((c.outputLatency||0)*1000)+' ms · '+(MOBILE?'mobile':'desktop')+' · '+(['standalone','fullscreen','minimal-ui'].some(m=>matchMedia('(display-mode: '+m+')').matches)?'app':'tab'));
     c.addEventListener('statechange',()=>dlog('ctx '+c.state+(document.hidden?' (hidden)':'')));}catch(e){}}
   try{const el=document.createElement('audio');el.setAttribute('playsinline','');el.style.display='none';
     if(BG.mode!=='direct'&&!BG.dest){BG.dest=A.ctx.createMediaStreamDestination();A.ana.connect(BG.dest);}
