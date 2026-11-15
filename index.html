@@ -581,7 +581,7 @@ html body.imm #imm .arpBox .tog.on b{top:19px;}
   <div class="wsize" id="freshRow"><span>this world</span><button id="worldFresh">fresh start</button></div>
 </section>
 <section class="pSec"><h3>Play</h3><div class="pRow"><button class="pill" id="sleep">sleep</button></div>
-  <div class="wsize" id="bgRow"><span>keep playing in background</span><button data-bg="1">on</button><button data-bg="0">off</button></div><div class="wsize" id="bgModeRow"><span>background sound · stream is the usual one</span><button data-bgm="stream">stream</button><button data-bgm="direct">direct</button></div><div class="wsize" id="tvRow"><span>tv view · full-screen world for casting</span><button id="tvGo">start</button></div></section>
+  <div class="wsize" id="bgRow"><span>keep playing in background</span><button data-bg="1">on</button><button data-bg="0">off</button></div><div class="wsize" id="bgModeRow"><span>background sound</span><button data-bgm="buffer">buffered</button><button data-bgm="stream">stream</button><button data-bgm="direct">direct</button></div><div class="wsize" id="tvRow"><span>tv view · full-screen world for casting</span><button id="tvGo">start</button></div></section>
 <section class="pSec"><h3>Display</h3><div class="pRow"><button class="tb" id="fsBtn" aria-label="full screen">⛶ full screen</button><button class="tb" id="crtBtn" aria-label="CRT glass on or off">▢ crt glass</button><button class="tb" id="themeBtn" aria-label="dark or light skin">◐ dark</button></div></section>
 <details class="pSec" id="pHelp"><summary>How to play</summary>
   <div class="guide">
@@ -5135,26 +5135,40 @@ function silentWav(){const n=8000*12,b=new Uint8Array(44+n),v=new DataView(b.buf
 // two ways to keep sound going with the screen off (pause menu): STREAM (default, v159 method) sends the mix through a media
 // stream <audio> element while hidden, which Android treats as real media playback; DIRECT leaves it on Web Audio and only plays
 // a silent loop for the lock-screen controls (v174; on the Pixel the sound stopped in the background)
-BG.mode='stream';try{if(localStorage.getItem('driftBgMode')==='direct')BG.mode='direct';}catch(e){}
+// BUFFER (v176, default where supported): the mix is recorded to opus and played through a MediaSource <audio> element with ~0.7 s of
+// buffer, so hiccups in the phone's background audio clock are absorbed instead of heard (STREAM has no buffer and stutters on the Pixel)
+const BUFMIME='audio/webm;codecs=opus';
+function bufOK(){try{return !!(window.MediaSource&&window.MediaRecorder&&MediaSource.isTypeSupported(BUFMIME)&&MediaRecorder.isTypeSupported(BUFMIME));}catch(e){return false;}}
+BG.mode=bufOK()?'buffer':'stream';try{const m=localStorage.getItem('driftBgMode');if(m==='direct'||m==='stream'||(m==='buffer'&&bufOK()))BG.mode=m;}catch(e){}
+function bufStart(el){const ms=new MediaSource();BG.q=[];BG.app=false;BG.sb=null;el.src=URL.createObjectURL(ms);
+  ms.addEventListener('sourceopen',()=>{try{BG.sb=ms.addSourceBuffer(BUFMIME);BG.sb.mode='sequence';BG.sb.addEventListener('updateend',()=>{BG.app=false;bufTrim();bufPump();});bufPump();}catch(e){dlog('buffer source failed · '+e.message);}},{once:true});
+  try{const r=new MediaRecorder(BG.dest.stream,{mimeType:BUFMIME,audioBitsPerSecond:128000});r.ondataavailable=e=>{if(e.data&&e.data.size){BG.q.push(e.data);if(BG.q.length>40)BG.q.splice(1,BG.q.length-40);bufPump();}};r.onerror=e=>dlog('recorder error · '+(e.error&&e.error.name));r.start(200);BG.rec=r;}catch(e){dlog('recorder failed · '+e.message);}}
+function bufPump(){const sb=BG.sb;if(!sb||BG.app||sb.updating||!BG.q.length)return;BG.app=true;const blob=BG.q.shift();
+  blob.arrayBuffer().then(ab=>{try{sb.appendBuffer(ab);}catch(e){BG.app=false;dlog('append failed · '+e.name);if(e.name==='QuotaExceededError')bufTrim(true);}}).catch(()=>{BG.app=false;});}
+function bufTrim(force){const sb=BG.sb,el=BG.el;if(!sb||sb.updating||!el)return;try{const b=sb.buffered;if(b.length&&(force||el.currentTime-b.start(0)>30)&&el.currentTime>12){BG.app=true;sb.remove(0,el.currentTime-8);}}catch(e){}}
+function bufAhead(){try{const b=BG.sb&&BG.sb.buffered;return b&&b.length?b.end(b.length-1)-BG.el.currentTime:0;}catch(e){return 0;}}
+// keep the (muted) player close to live while visible; set ~0.7 s of buffer when handing over
+function bufEdge(tgt){try{const b=BG.sb&&BG.sb.buffered;if(!b||!b.length)return;const end=b.end(b.length-1);if(end-BG.el.currentTime>tgt+.6||end-BG.el.currentTime<tgt*.5)BG.el.currentTime=Math.max(b.start(b.length-1),end-tgt);}catch(e){}}
 // set up once, inside a tap (browsers only let media start from a gesture)
 function bgPrep(){if(!A||BG.el)return;
   if(!BG.ctxLog){BG.ctxLog=1;try{const c=A.ctx;dlog('audio start · '+c.sampleRate+' Hz · base '+Math.round((c.baseLatency||0)*1000)+' ms · out '+Math.round((c.outputLatency||0)*1000)+' ms · '+(MOBILE?'mobile':'desktop')+' · '+(matchMedia('(display-mode: standalone)').matches?'app':'tab'));
     c.addEventListener('statechange',()=>dlog('ctx '+c.state+(document.hidden?' (hidden)':'')));}catch(e){}}
   try{const el=document.createElement('audio');el.setAttribute('playsinline','');el.style.display='none';
-    if(BG.mode==='stream'){if(!BG.dest){BG.dest=A.ctx.createMediaStreamDestination();A.ana.connect(BG.dest);}el.srcObject=BG.dest.stream;el.muted=true;}
+    if(BG.mode!=='direct'&&!BG.dest){BG.dest=A.ctx.createMediaStreamDestination();A.ana.connect(BG.dest);}
+    if(BG.mode==='stream'){el.srcObject=BG.dest.stream;el.muted=true;}else if(BG.mode==='buffer'){el.muted=true;bufStart(el);}
     else{el.src=silentWav();el.loop=true;}
     document.body.appendChild(el);BG.el=el;
     // the phone may pause the channel (e.g. when hiding the page): log it and try to restart, never treat it as the player pressing pause
     el.addEventListener('pause',()=>{if(BG.own){BG.own=false;return;}dlog('channel paused by the phone'+(document.hidden?' (hidden)':''));if(!S.killed)setTimeout(()=>{if(!S.killed&&BG.el===el&&el.paused)el.play().then(()=>dlog('channel restarted')).catch(e=>dlog('channel restart refused · '+e.name));},300);});
     ['play','waiting','stalled','error'].forEach(ev=>el.addEventListener(ev,()=>dlog('channel '+ev)));
     dlog('channel mode '+BG.mode);
-    if(!S.killed||BG.mode==='stream')el.play().catch(e=>dlog('channel play refused · '+e.name));}catch(e){BG.el=null;dlog('channel failed · '+e.message);}
+    if(!S.killed||BG.mode!=='direct')el.play().catch(e=>dlog('channel play refused · '+e.name));}catch(e){BG.el=null;dlog('channel failed · '+e.message);}
   bgSession();bgWatch();}
 // STREAM: hand the sound to the media channel while hidden (only once it's actually playing, so nothing goes silent)
-function bgRoute(on){if(!A||!BG.el||BG.mode!=='stream'||!!BG.routed===on)return;const el=BG.el;
-  if(on){el.muted=false;el.play().then(()=>{if(!BG.hidden){el.muted=true;return;}try{A.ana.disconnect(A.ctx.destination);}catch(e){}BG.routed=true;dlog('sound → media channel');}).catch(e=>{el.muted=true;dlog('channel refused · '+e.name+' · sound stays on web audio');});}
+function bgRoute(on){if(!A||!BG.el||BG.mode==='direct'||!!BG.routed===on)return;const el=BG.el;
+  if(on){if(BG.mode==='buffer')bufEdge(.7);el.muted=false;el.play().then(()=>{if(!BG.hidden){el.muted=true;return;}try{A.ana.disconnect(A.ctx.destination);}catch(e){}BG.routed=true;dlog('sound → media channel'+(BG.mode==='buffer'?' · buffer '+bufAhead().toFixed(2)+' s':''));}).catch(e=>{el.muted=true;dlog('channel refused · '+e.name+' · sound stays on web audio');});}
   else{try{A.ana.connect(A.ctx.destination);}catch(e){}el.muted=true;BG.routed=false;dlog('sound → web audio');}}
-function setBgMode(m){if(BG.mode===m)return;bgRoute(false);BG.mode=m;try{localStorage.setItem('driftBgMode',m);}catch(e){}const o=BG.el;BG.el=null;if(o){BG.own=true;try{o.pause();o.remove();}catch(e){}}bgPrep();bgUI();}
+function setBgMode(m){if(BG.mode===m)return;bgRoute(false);BG.mode=m;try{localStorage.setItem('driftBgMode',m);}catch(e){}const o=BG.el;BG.el=null;try{if(BG.rec&&BG.rec.state!=='inactive')BG.rec.stop();}catch(e){}BG.rec=null;BG.sb=null;BG.q=[];if(o){BG.own=true;try{o.pause();o.removeAttribute('src');o.srcObject=null;o.load();o.remove();}catch(e){}}bgPrep();bgUI();}
 // DIRECT: keep the silent loop in step with pause (called from setKill)
 function bgSync(){const el=BG.el;if(!el||BG.mode!=='direct')return;if(S.killed){if(!el.paused){BG.own=true;el.pause();}}else if(el.paused)el.play().catch(e=>dlog('channel play refused · '+e.name));}
 function bgSession(){const ms=navigator.mediaSession;if(!ms)return;try{
@@ -5168,6 +5182,8 @@ function bgSession(){const ms=navigator.mediaSession;if(!ms)return;try{
 function bgWatch(){if(BG.wd)return;BG.wdLast=performance.now();BG.wd=setInterval(()=>{const now=performance.now(),gap=now-BG.wdLast;BG.wdLast=now;
   if(gap>2500)dlog('page was frozen or throttled for '+(gap/1000).toFixed(1)+' s'+(document.hidden?' (hidden)':''));
   try{const ps=A&&A.ctx.playoutStats;if(ps){const f=ps.fallbackFramesEvents;if(BG.fb>=0&&f>BG.fb)dlog('AUDIO GLITCH × '+(f-BG.fb)+' · '+Math.round(ps.fallbackDuration||0)+' ms total silence-filled'+(document.hidden?' (hidden)':''));BG.fb=f;}}catch(e){}
+  if(BG.mode==='buffer'&&BG.el){if(!BG.hidden)bufEdge(.4);else{const a=bufAhead();if(a<.15&&!S.killed)BG.low=(BG.low||0)+1;if(a>4)bufEdge(.7);}}
+  if(BG.hidden&&A&&!S.killed){const c=A.ctx.currentTime;if(!BG.ck)BG.ck={c,t:now,n:0};else if(now-BG.ck.t>=5000){const r=(c-BG.ck.c)/((now-BG.ck.t)/1000);dlog('hidden 5 s · audio clock '+(r*100).toFixed(0)+'% of real time'+(BG.mode==='buffer'?' · buffer '+bufAhead().toFixed(2)+' s'+(BG.low?' · ran low '+BG.low+'×':''):'')+(BG.el&&BG.el.paused?' · channel PAUSED':''));BG.ck={c,t:now};BG.low=0;}}else BG.ck=null;
   if(BG.hidden&&BG.gN){dlog('background timer: '+BG.gN+' late ticks, worst '+Math.round(BG.gMax)+' ms');BG.gN=0;BG.gMax=0;}},1000);}
 function bgTick(){const now=performance.now(),gap=BG.last?now-BG.last:0;if(now-BG.last<25)return;BG.last=now;if(gap>200){BG.gN++;BG.gMax=Math.max(BG.gMax,gap);}
   // if the phone suspends the audio, wake it at most once a second and never while paused
@@ -5294,10 +5310,10 @@ document.querySelectorAll('.wsize [data-ws]').forEach(b=>b.addEventListener('cli
 document.querySelector('#engSw .engKnob').addEventListener('click',()=>{ensureAudio();setEngine(ENGS[(ENGS.indexOf(ENG.cur)+1)%ENGS.length]);});document.querySelectorAll('#engSw [data-e]').forEach(b=>b.addEventListener('click',()=>{ensureAudio();setEngine(b.dataset.e);}));updateEngUI();
 document.getElementById('unequip').addEventListener('click',()=>{ensureAudio();unequip();});initArpUI();initPause();wearApply();document.getElementById('start').addEventListener('click',()=>{try{powerOn();}catch(e){}});
 try{initSkin();}catch(e){console.error(e);}
-document.querySelectorAll('#bgModeRow [data-bgm]').forEach(b=>b.addEventListener('click',()=>{ensureAudio();setBgMode(b.dataset.bgm);}));
+document.querySelectorAll('#bgModeRow [data-bgm]').forEach(b=>{if(b.dataset.bgm==='buffer'&&!bufOK())b.hidden=true;b.addEventListener('click',()=>{ensureAudio();setBgMode(b.dataset.bgm);});});
 document.getElementById('diagBtn').addEventListener('click',()=>{const p=document.getElementById('diagPre');diagShow(p.hidden);});
 document.getElementById('diagClr').addEventListener('click',()=>{DIAG.log=[];dsave();diagShow(true);});
-document.getElementById('diagCopy').addEventListener('click',()=>{const t='Drift v175 audio log\n'+navigator.userAgent+'\n'+DIAG.log.join('\n');const ok=()=>toast('LOG COPIED'),no=()=>{diagShow(true);const r=document.createRange();r.selectNodeContents(document.getElementById('diagPre'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('LOG SELECTED · COPY IT');};try{navigator.clipboard.writeText(t).then(ok,no);}catch(e){no();}});
+document.getElementById('diagCopy').addEventListener('click',()=>{const t='Drift v176 audio log\n'+navigator.userAgent+'\n'+DIAG.log.join('\n');const ok=()=>toast('LOG COPIED'),no=()=>{diagShow(true);const r=document.createRange();r.selectNodeContents(document.getElementById('diagPre'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('LOG SELECTED · COPY IT');};try{navigator.clipboard.writeText(t).then(ok,no);}catch(e){no();}});
 document.getElementById('devWhale').addEventListener('click',()=>{ensureAudio();devWhale(false);});document.getElementById('devBlue').addEventListener('click',()=>{ensureAudio();devWhale(true);});
 document.getElementById('devQuake').addEventListener('click',()=>{ensureAudio();if(!DIS.cur)startQuake();});
 document.getElementById('octDn').addEventListener('click',()=>{ensureAudio();octStep(-1);});
