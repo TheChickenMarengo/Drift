@@ -5160,9 +5160,10 @@ function bgPrep(){if(!A||BG.el)return;
     document.body.appendChild(el);BG.el=el;
     // the phone may pause the channel (e.g. when hiding the page): log it and try to restart, never treat it as the player pressing pause
     el.addEventListener('pause',()=>{if(BG.own){BG.own=false;return;}dlog('channel paused by the phone'+(document.hidden?' (hidden)':''));if(!S.killed)setTimeout(()=>{if(!S.killed&&BG.el===el&&el.paused)el.play().then(()=>dlog('channel restarted')).catch(e=>dlog('channel restart refused · '+e.name));},300);});
-    ['play','waiting','stalled','error'].forEach(ev=>el.addEventListener(ev,()=>dlog('channel '+ev)));
+    ['play','waiting','stalled','error'].forEach(ev=>el.addEventListener(ev,()=>{if(ev==='waiting'){const n=performance.now();if(!BG.hidden||n-(BG.wLog||0)<3000){BG.wN=(BG.wN||0)+1;return;}BG.wLog=n;dlog('channel waiting'+(BG.wN?' (+'+BG.wN+' more)':''));BG.wN=0;return;}dlog('channel '+ev);}));
     dlog('channel mode '+BG.mode);
-    if(!S.killed||BG.mode!=='direct')el.play().catch(e=>dlog('channel play refused · '+e.name));}catch(e){BG.el=null;dlog('channel failed · '+e.message);}
+    if(!S.killed||BG.mode==='stream')el.play().catch(e=>dlog('channel play refused · '+e.name));}catch(e){BG.el=null;dlog('channel failed · '+e.message);}
+  if(!BG.keep){try{const k=A.ctx.createConstantSource();k.offset.value=1e-5;k.connect(A.ctx.destination);k.start();BG.keep=k;}catch(e){dlog('keepalive failed · '+e.message);}}
   bgSession();bgWatch();}
 // STREAM: hand the sound to the media channel while hidden (only once it's actually playing, so nothing goes silent)
 function bgRoute(on){if(!A||!BG.el||BG.mode==='direct'||!!BG.routed===on)return;const el=BG.el;
@@ -5170,7 +5171,7 @@ function bgRoute(on){if(!A||!BG.el||BG.mode==='direct'||!!BG.routed===on)return;
   else{try{A.ana.connect(A.ctx.destination);}catch(e){}el.muted=true;BG.routed=false;dlog('sound → web audio');}}
 function setBgMode(m){if(BG.mode===m)return;bgRoute(false);BG.mode=m;try{localStorage.setItem('driftBgMode',m);}catch(e){}const o=BG.el;BG.el=null;try{if(BG.rec&&BG.rec.state!=='inactive')BG.rec.stop();}catch(e){}BG.rec=null;BG.sb=null;BG.q=[];if(o){BG.own=true;try{o.pause();o.removeAttribute('src');o.srcObject=null;o.load();o.remove();}catch(e){}}bgPrep();bgUI();}
 // DIRECT: keep the silent loop in step with pause (called from setKill)
-function bgSync(){const el=BG.el;if(!el||BG.mode!=='direct')return;if(S.killed){if(!el.paused){BG.own=true;el.pause();}}else if(el.paused)el.play().catch(e=>dlog('channel play refused · '+e.name));}
+function bgSync(){const el=BG.el;if(!el||BG.mode==='stream')return;if(S.killed){if(!el.paused){BG.own=true;el.pause();}}else if(el.paused){if(BG.mode==='buffer')bufEdge(BG.hidden?.7:.4);el.play().catch(e=>dlog('channel play refused · '+e.name));}}
 function bgSession(){const ms=navigator.mediaSession;if(!ms)return;try{
   ms.metadata=new MediaMetadata({title:'Drift',artist:(worldName?worldName+' · ':'')+(typeof AGES!=='undefined'?AGES[AGE.i].n.toLowerCase():'')+' age',album:'ambient field synth',artwork:[{src:bgIcon(),sizes:'96x96',type:'image/png'}]});
   ms.setActionHandler('play',()=>{dlog('lock screen: play');if(S.killed)setKill(false);else bgSync();if(BG.el&&BG.el.paused)BG.el.play().catch(()=>{});ms.playbackState='playing';});
@@ -5183,7 +5184,7 @@ function bgWatch(){if(BG.wd)return;BG.wdLast=performance.now();BG.wd=setInterval
   if(gap>2500)dlog('page was frozen or throttled for '+(gap/1000).toFixed(1)+' s'+(document.hidden?' (hidden)':''));
   try{const ps=A&&A.ctx.playoutStats;if(ps){const f=ps.fallbackFramesEvents;if(BG.fb>=0&&f>BG.fb)dlog('AUDIO GLITCH × '+(f-BG.fb)+' · '+Math.round(ps.fallbackDuration||0)+' ms total silence-filled'+(document.hidden?' (hidden)':''));BG.fb=f;}}catch(e){}
   if(BG.mode==='buffer'&&BG.el){if(!BG.hidden)bufEdge(.4);else{const a=bufAhead();if(a<.15&&!S.killed)BG.low=(BG.low||0)+1;if(a>4)bufEdge(.7);}}
-  if(BG.hidden&&A&&!S.killed){const c=A.ctx.currentTime;if(!BG.ck)BG.ck={c,t:now,n:0};else if(now-BG.ck.t>=5000){const r=(c-BG.ck.c)/((now-BG.ck.t)/1000);dlog('hidden 5 s · audio clock '+(r*100).toFixed(0)+'% of real time'+(BG.mode==='buffer'?' · buffer '+bufAhead().toFixed(2)+' s'+(BG.low?' · ran low '+BG.low+'×':''):'')+(BG.el&&BG.el.paused?' · channel PAUSED':''));BG.ck={c,t:now};BG.low=0;}}else BG.ck=null;
+  if(BG.hidden&&A&&!S.killed){const c=A.ctx.currentTime;if(!BG.ck)BG.ck={c,t:now,n:0};else if(now-BG.ck.t>=5000){const r=(c-BG.ck.c)/((now-BG.ck.t)/1000);dlog('hidden 5 s · audio clock '+(r*100).toFixed(0)+'% of real time'+(BG.mode==='buffer'?' · buffer '+bufAhead().toFixed(2)+' s'+(BG.low?' · ran low '+BG.low+'×':''):'')+(BG.el&&BG.el.paused?' · channel PAUSED':''));BG.ck={c,t:now};BG.low=0;}}else if(A&&!S.killed&&!BG.hidden){const c=A.ctx.currentTime;if(!BG.fk||BG.fk.h)BG.fk={c,t:now};else if(now-BG.fk.t>=60000){dlog('visible 60 s · audio clock '+((c-BG.fk.c)/((now-BG.fk.t)/1000)*100).toFixed(0)+'%');BG.fk={c,t:now};}BG.ck=null;}else BG.ck=null;
   if(BG.hidden&&BG.gN){dlog('background timer: '+BG.gN+' late ticks, worst '+Math.round(BG.gMax)+' ms');BG.gN=0;BG.gMax=0;}},1000);}
 function bgTick(){const now=performance.now(),gap=BG.last?now-BG.last:0;if(now-BG.last<25)return;BG.last=now;if(gap>200){BG.gN++;BG.gMax=Math.max(BG.gMax,gap);}
   // if the phone suspends the audio, wake it at most once a second and never while paused
@@ -5313,7 +5314,7 @@ try{initSkin();}catch(e){console.error(e);}
 document.querySelectorAll('#bgModeRow [data-bgm]').forEach(b=>{if(b.dataset.bgm==='buffer'&&!bufOK())b.hidden=true;b.addEventListener('click',()=>{ensureAudio();setBgMode(b.dataset.bgm);});});
 document.getElementById('diagBtn').addEventListener('click',()=>{const p=document.getElementById('diagPre');diagShow(p.hidden);});
 document.getElementById('diagClr').addEventListener('click',()=>{DIAG.log=[];dsave();diagShow(true);});
-document.getElementById('diagCopy').addEventListener('click',()=>{const t='Drift v176 audio log\n'+navigator.userAgent+'\n'+DIAG.log.join('\n');const ok=()=>toast('LOG COPIED'),no=()=>{diagShow(true);const r=document.createRange();r.selectNodeContents(document.getElementById('diagPre'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('LOG SELECTED · COPY IT');};try{navigator.clipboard.writeText(t).then(ok,no);}catch(e){no();}});
+document.getElementById('diagCopy').addEventListener('click',()=>{const t='Drift v177 audio log\n'+navigator.userAgent+'\n'+DIAG.log.join('\n');const ok=()=>toast('LOG COPIED'),no=()=>{diagShow(true);const r=document.createRange();r.selectNodeContents(document.getElementById('diagPre'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('LOG SELECTED · COPY IT');};try{navigator.clipboard.writeText(t).then(ok,no);}catch(e){no();}});
 document.getElementById('devWhale').addEventListener('click',()=>{ensureAudio();devWhale(false);});document.getElementById('devBlue').addEventListener('click',()=>{ensureAudio();devWhale(true);});
 document.getElementById('devQuake').addEventListener('click',()=>{ensureAudio();if(!DIS.cur)startQuake();});
 document.getElementById('octDn').addEventListener('click',()=>{ensureAudio();octStep(-1);});
