@@ -581,7 +581,7 @@ html body.imm #imm .arpBox .tog.on b{top:19px;}
   <div class="wsize" id="freshRow"><span>this world</span><button id="worldFresh">fresh start</button></div>
 </section>
 <section class="pSec"><h3>Play</h3><div class="pRow"><button class="pill" id="sleep">sleep</button></div>
-  <div class="wsize" id="bgRow"><span>keep playing in background</span><button data-bg="1">on</button><button data-bg="0">off</button></div><div class="wsize" id="bgModeRow"><span>background sound</span><button data-bgm="buffer">buffered</button><button data-bgm="stream">stream</button><button data-bgm="direct">direct</button></div><div class="wsize" id="tvRow"><span>tv view · full-screen world for casting</span><button id="tvGo">start</button></div></section>
+  <div class="wsize" id="bgRow"><span>keep playing in background · experimental, stutters on android</span><button data-bg="1">on</button><button data-bg="0">off</button></div><div class="wsize" id="bgModeRow"><span>background sound</span><button data-bgm="buffer">buffered</button><button data-bgm="stream">stream</button><button data-bgm="direct">direct</button></div><div class="wsize" id="tvRow"><span>tv view · full-screen world for casting</span><button id="tvGo">start</button></div></section>
 <section class="pSec"><h3>Display</h3><div class="pRow"><button class="tb" id="fsBtn" aria-label="full screen">⛶ full screen</button><button class="tb" id="crtBtn" aria-label="CRT glass on or off">▢ crt glass</button><button class="tb" id="themeBtn" aria-label="dark or light skin">◐ dark</button></div></section>
 <details class="pSec" id="pHelp"><summary>How to play</summary>
   <div class="guide">
@@ -599,7 +599,7 @@ html body.imm #imm .arpBox .tog.on b{top:19px;}
       <li><b>Notes &amp; power-ups.</b> Collect gold notes (you start with 10). Power-ups wait in the tray: tap to use.</li>
       <li><b>The world ages.</b> It starts wild with no people; nomadic tribes wander in, camp and some settle. Then come settlement, the medieval age (castles, a tavern by night), industry (cars, ships, planes, trains) and ruins, and it goes wild again. Wildlife roams the wild land, climates swing wet and dry, burnt forest regrows, and comets, eclipses and auroras take over the harmony. Visit a camp to hear its fire music; stand still and your band joins in. Bump a mountain three times to dig; dig far enough and you may find the deep.</li>
       <li><b>Pause.</b> PAUSE (or Esc) freezes everything and opens the menu: new world and size, age cycle length, fog of war, fresh start, sleep timer, light or dark, full screen and this guide.</li>
-      <li><b>Background.</b> Switch apps or turn the screen off and Drift keeps playing, with wander exploring for you; play, pause and next (a chord shift) appear on the lock screen. Turn it off in the pause menu. Works best in the installed app.</li>
+      <li><b>Background.</b> Switch apps or turn the screen off and Drift fades out and pauses, then carries on when you come back. Keep playing in background (pause menu) is experimental: on Android, Chrome slows web audio down in the background, so it stutters.</li>
     </ol>
     <h2>parts <span>you play them by moving</span></h2><div class="gl wide" id="gl-part"></div>
     <h2>keys sounds <span>hold the keys knob</span></h2><div class="gl" id="gl-keys"></div>
@@ -5117,7 +5117,7 @@ function frameBody(now){const dt=Math.min(.05,(now-last)/1000);last=now;const t=
    relayed every sample through a media stream and stuttered on the phone). A separate silent looping <audio> element only exists so the
    phone shows Drift on the lock screen with play/pause/next. ---- */
 const BG={on:true,hidden:false,iv:null,el:null,wasAuto:false,last:0,icon:null,own:false,gN:0,gMax:0,wd:null,wdLast:0,fb:-1};
-try{if(localStorage.getItem('driftBg')==='0')BG.on=false;}catch(e){}
+BG.on=false;try{if(localStorage.getItem('driftBg2')==='1')BG.on=true;}catch(e){}
 /* ---- diagnostic log (pause menu > dev tools > audio log): visibility, page lifecycle, audio context state, output glitches,
    timer gaps. Kept in localStorage so it survives a reload; copy it from the menu and paste it into the chat ---- */
 const DIAG={log:[],saveT:0};
@@ -5150,7 +5150,7 @@ function bufAhead(){try{const b=BG.sb&&BG.sb.buffered;return b&&b.length?b.end(b
 // keep the (muted) player close to live while visible; set ~0.7 s of buffer when handing over
 function bufEdge(tgt){try{const b=BG.sb&&BG.sb.buffered;if(!b||!b.length)return;const end=b.end(b.length-1);if(end-BG.el.currentTime>tgt+.6||end-BG.el.currentTime<tgt*.5)BG.el.currentTime=Math.max(b.start(b.length-1),end-tgt);}catch(e){}}
 // set up once, inside a tap (browsers only let media start from a gesture)
-function bgPrep(){if(!A||BG.el)return;
+function bgPrep(){if(!A||BG.el)return;if(!BG.on){bgSession();bgWatch();return;}
   if(!BG.ctxLog){BG.ctxLog=1;try{const c=A.ctx;dlog('audio start · '+c.sampleRate+' Hz · base '+Math.round((c.baseLatency||0)*1000)+' ms · out '+Math.round((c.outputLatency||0)*1000)+' ms · '+(MOBILE?'mobile':'desktop')+' · '+(matchMedia('(display-mode: standalone)').matches?'app':'tab'));
     c.addEventListener('statechange',()=>dlog('ctx '+c.state+(document.hidden?' (hidden)':'')));}catch(e){}}
   try{const el=document.createElement('audio');el.setAttribute('playsinline','');el.style.display='none';
@@ -5169,7 +5169,7 @@ function bgPrep(){if(!A||BG.el)return;
 function bgRoute(on){if(!A||!BG.el||BG.mode==='direct'||!!BG.routed===on)return;const el=BG.el;
   if(on){if(BG.mode==='buffer')bufEdge(.7);el.muted=false;el.play().then(()=>{if(!BG.hidden){el.muted=true;return;}try{A.ana.disconnect(A.ctx.destination);}catch(e){}BG.routed=true;dlog('sound → media channel'+(BG.mode==='buffer'?' · buffer '+bufAhead().toFixed(2)+' s':''));}).catch(e=>{el.muted=true;dlog('channel refused · '+e.name+' · sound stays on web audio');});}
   else{try{A.ana.connect(A.ctx.destination);}catch(e){}el.muted=true;BG.routed=false;dlog('sound → web audio');}}
-function setBgMode(m){if(BG.mode===m)return;bgRoute(false);BG.mode=m;try{localStorage.setItem('driftBgMode',m);}catch(e){}const o=BG.el;BG.el=null;try{if(BG.rec&&BG.rec.state!=='inactive')BG.rec.stop();}catch(e){}BG.rec=null;BG.sb=null;BG.q=[];if(o){BG.own=true;try{o.pause();o.removeAttribute('src');o.srcObject=null;o.load();o.remove();}catch(e){}}bgPrep();bgUI();}
+function setBgMode(m){if(BG.mode===m)return;if(!BG.on){BG.mode=m;try{localStorage.setItem('driftBgMode',m);}catch(e){}bgUI();return;}bgRoute(false);BG.mode=m;try{localStorage.setItem('driftBgMode',m);}catch(e){}const o=BG.el;BG.el=null;try{if(BG.rec&&BG.rec.state!=='inactive')BG.rec.stop();}catch(e){}BG.rec=null;BG.sb=null;BG.q=[];if(o){BG.own=true;try{o.pause();o.removeAttribute('src');o.srcObject=null;o.load();o.remove();}catch(e){}}bgPrep();bgUI();}
 // DIRECT: keep the silent loop in step with pause (called from setKill)
 function bgSync(){const el=BG.el;if(!el||BG.mode==='stream')return;if(S.killed){if(!el.paused){BG.own=true;el.pause();}}else if(el.paused){if(BG.mode==='buffer')bufEdge(BG.hidden?.7:.4);el.play().catch(e=>dlog('channel play refused · '+e.name));}}
 function bgSession(){const ms=navigator.mediaSession;if(!ms)return;try{
@@ -5203,7 +5203,7 @@ document.addEventListener('visibilitychange',()=>{dlog('vis '+(document.hidden?'
 ['freeze','resume'].forEach(ev=>document.addEventListener(ev,()=>dlog('page '+ev)));
 window.addEventListener('pageshow',e=>dlog('pageshow'+(e.persisted?' (restored)':'')));window.addEventListener('pagehide',()=>{dlog('pagehide');dsave();});
 function bgUI(){document.querySelectorAll('#bgRow [data-bg]').forEach(b=>b.classList.toggle('on',(b.dataset.bg==='1')===BG.on));document.querySelectorAll('#bgModeRow [data-bgm]').forEach(b=>b.classList.toggle('on',b.dataset.bgm===BG.mode));}
-function setBg(on){BG.on=on;try{localStorage.setItem('driftBg',on?'1':'0');}catch(e){}bgUI();}
+function setBg(on){const was=BG.on;BG.on=on;try{localStorage.setItem('driftBg2',on?'1':'0');}catch(e){}if(A&&was!==on){if(on)bgPrep();else{bgRoute(false);const o=BG.el;BG.el=null;try{if(BG.rec&&BG.rec.state!=='inactive')BG.rec.stop();}catch(e){}BG.rec=null;BG.sb=null;BG.q=[];if(o){BG.own=true;try{o.pause();o.removeAttribute('src');o.srcObject=null;o.load();o.remove();}catch(e){}}}}bgUI();}
 
 /* ============================== INPUT ============================== */
 document.querySelectorAll('.key').forEach(k=>{const d=k.dataset.dir;let rep=null;
@@ -5314,7 +5314,7 @@ try{initSkin();}catch(e){console.error(e);}
 document.querySelectorAll('#bgModeRow [data-bgm]').forEach(b=>{if(b.dataset.bgm==='buffer'&&!bufOK())b.hidden=true;b.addEventListener('click',()=>{ensureAudio();setBgMode(b.dataset.bgm);});});
 document.getElementById('diagBtn').addEventListener('click',()=>{const p=document.getElementById('diagPre');diagShow(p.hidden);});
 document.getElementById('diagClr').addEventListener('click',()=>{DIAG.log=[];dsave();diagShow(true);});
-document.getElementById('diagCopy').addEventListener('click',()=>{const t='Drift v177 audio log\n'+navigator.userAgent+'\n'+DIAG.log.join('\n');const ok=()=>toast('LOG COPIED'),no=()=>{diagShow(true);const r=document.createRange();r.selectNodeContents(document.getElementById('diagPre'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('LOG SELECTED · COPY IT');};try{navigator.clipboard.writeText(t).then(ok,no);}catch(e){no();}});
+document.getElementById('diagCopy').addEventListener('click',()=>{const t='Drift v178 audio log\n'+navigator.userAgent+'\n'+DIAG.log.join('\n');const ok=()=>toast('LOG COPIED'),no=()=>{diagShow(true);const r=document.createRange();r.selectNodeContents(document.getElementById('diagPre'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('LOG SELECTED · COPY IT');};try{navigator.clipboard.writeText(t).then(ok,no);}catch(e){no();}});
 document.getElementById('devWhale').addEventListener('click',()=>{ensureAudio();devWhale(false);});document.getElementById('devBlue').addEventListener('click',()=>{ensureAudio();devWhale(true);});
 document.getElementById('devQuake').addEventListener('click',()=>{ensureAudio();if(!DIS.cur)startQuake();});
 document.getElementById('octDn').addEventListener('click',()=>{ensureAudio();octStep(-1);});
